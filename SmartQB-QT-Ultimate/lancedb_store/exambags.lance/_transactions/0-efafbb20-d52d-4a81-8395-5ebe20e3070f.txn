@@ -1,0 +1,4 @@
+$efafbb20-d52d-4a81-8395-5ebe20e3070f\xb2\xe3id \xff\xff\xff\xff\xff\xff\xff\xff\xff*int648title \xff\xff\xff\xff\xff\xff\xff\xff\xff*string8"
+created_at \xff\xff\xff\xff\xff\xff\xff\xff\xff*int648 	group_ids \xff\xff\xff\xff\xff\xff\xff\xff\xff*list8item *int6408"!
+lance.auto_cleanup.interval20"'
+lance.auto_cleanup.older_than14days
