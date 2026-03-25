@@ -153,7 +153,6 @@ def init_lancedb(uri: str = "./lancedb_store"):
     return db
 
 
-
 def _init_lancedb_legacy(uri: str = "./lancedb_store"):
     """Initializes LanceDB connection without FTS5 (Legacy)."""
     return init_lancedb(uri)
