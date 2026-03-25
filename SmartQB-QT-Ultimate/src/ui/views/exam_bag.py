@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
 from PySide6.QtCore import Qt
 from qfluentwidgets import (PrimaryPushButton, TitleLabel, CardWidget, BodyLabel,
                             FlowLayout, SearchLineEdit)
@@ -23,6 +23,8 @@ class ExamBagInterface(QWidget):
 
         self.saBtn = PrimaryPushButton("🔥 智能组卷 (Simulated Annealing)", self)
         self.exportBtn = PrimaryPushButton("📄 套用母版导出 (Export Word)", self)
+        self.saBtn.clicked.connect(self.on_saBtn_clicked)
+        self.exportBtn.clicked.connect(self.on_exportBtn_clicked)
         self.toolbar.addWidget(self.saBtn)
         self.toolbar.addWidget(self.exportBtn)
         self.toolbar.addStretch(1)
@@ -41,3 +43,13 @@ class ExamBagInterface(QWidget):
             self.flowLayout.addWidget(card)
 
         self.layout.addWidget(self.flowLayoutWidget)
+
+    def on_saBtn_clicked(self):
+        # TODO: Implement full Simulated Annealing UI popup logic
+        import logging
+        logging.info("SA Generation triggered. UI placeholder.")
+
+    def on_exportBtn_clicked(self):
+        # TODO: Implement Word Export dialog UI
+        import logging
+        logging.info("Export pipeline triggered. UI placeholder.")

@@ -22,7 +22,7 @@ class HybridSearchEngine:
         logging.warning("Using placeholder embedder; integrate real embedding service before production.")
         return [0.0] * 1536
 
-    def _get_table(self):
+    def get_table(self):
         if "questions" not in self.db.table_names():
             return None
         return self.db.open_table("questions")
@@ -52,7 +52,7 @@ class HybridSearchEngine:
 
     def dense_search(self, query: str, top_k: int = 10) -> Dict[int, int]:
         """ returns {question_id: rank} """
-        table = self._get_table()
+        table = self.get_table()
         if not table:
             return {}
 
@@ -66,7 +66,7 @@ class HybridSearchEngine:
 
     def hybrid_search(self, query: str, top_k: int = 10, rrf_k: int = 60) -> List[Dict]:
         """ Reciprocal Rank Fusion """
-        table = self._get_table()
+        table = self.get_table()
         if not table:
             return []
 
@@ -90,7 +90,8 @@ class HybridSearchEngine:
         for q_id, score in sorted_ids:
             try:
                 # Query LanceDB directly for the specific hydrated ID
-                result = table.search().where(f"id = {q_id}").limit(1).to_list()
+                # Parameterized LanceDB lookup to prevent formatting injection risks
+                result = table.search().where("id = ?", parameters=[q_id]).limit(1).to_list()
                 if result:
                     q = result[0]
                     q["_rrf_score"] = score

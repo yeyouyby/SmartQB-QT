@@ -49,9 +49,15 @@ class ZenModeInterface(QWidget):
 
     def showEvent(self, event):
         super().showEvent(event)
+        self.timeElapsed = QTime(0, 0, 0)
+        self.timerLabel.setText("00:00")
         self.timer.start(1000)
-        if self.window():
-            self.window().showFullScreen()
+        main_win = self.window()
+        if main_win:
+            if hasattr(main_win, 'navigationInterface'):
+                self._prev_nav_state = not main_win.navigationInterface.isHidden()
+                main_win.navigationInterface.setHidden(True)
+            main_win.showFullScreen()
 
     def update_timer(self):
         self.timeElapsed = self.timeElapsed.addSecs(1)
@@ -59,5 +65,8 @@ class ZenModeInterface(QWidget):
 
     def exit_zen_mode(self):
         self.timer.stop()
-        if self.window():
-            self.window().showNormal()
+        main_win = self.window()
+        if main_win:
+            if hasattr(self, '_prev_nav_state') and self._prev_nav_state and hasattr(main_win, 'navigationInterface'):
+                main_win.navigationInterface.setHidden(False)
+            main_win.showNormal()

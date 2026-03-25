@@ -47,11 +47,11 @@ class SnowflakeID:
                 raise Exception("Clock moved backwards")
 
             if timestamp == self.last_timestamp:
-                    self.sequence = (self.sequence + 1) & self.sequence_mask
+                self.sequence = (self.sequence + 1) & self.sequence_mask
                 if self.sequence == 0:
                     timestamp = self._wait_next_millis(self.last_timestamp)
             else:
-                    self.sequence = 0
+                self.sequence = 0
 
             self.last_timestamp = timestamp
 
@@ -132,20 +132,9 @@ def init_lancedb(uri: str = "./lancedb_store"):
         conn.commit()
 
     return db
-def __deprecated_init_lancedb(uri: str = "./lancedb_store"):
-    """Initializes the database connection and creates tables if they don't exist"""
-    db = lancedb.connect(uri)
+import warnings
 
-    # Create tables
-    if "questions" not in db.table_names():
-        db.create_table("questions", schema=Question)
-    if "drafts" not in db.table_names():
-        db.create_table("drafts", schema=Draft)
-    if "exambags" not in db.table_names():
-        db.create_table("exambags", schema=ExamBag)
-    if "examgroups" not in db.table_names():
-        db.create_table("examgroups", schema=ExamGroup)
-    if "questionmaps" not in db.table_names():
-        db.create_table("questionmaps", schema=QuestionMap)
-
-    return db
+@warnings.deprecated("Use init_lancedb() instead. Legacy version lacks FTS5 SQLite bindings.")
+def _init_lancedb_legacy(uri: str = "./lancedb_store"):
+    """Initializes LanceDB connection without FTS5 (Legacy)."""
+    return init_lancedb(uri)

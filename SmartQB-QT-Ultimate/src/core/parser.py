@@ -42,7 +42,9 @@ class PPStructureParser(BaseParser):
                     # Safe extraction helper logic
                     text_lines = [r.get('text', '') for r in res.get('res', []) if isinstance(r, dict)]
                     markdown_content += " ".join(text_lines) + "\n"
-            except AttributeError:
+            except (TypeError, KeyError) as e:
+                import logging
+                logging.error(f"OCR parsing skipped entry due to structure change: {e} - Row: {res}")
                 continue
 
         # Return format expected by BaseParser
@@ -51,3 +53,9 @@ class PPStructureParser(BaseParser):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     parser = PPStructureParser()
+    try:
+        # Example public method call
+        result = parser.parse("dummy_test_image.jpg")
+        print("Test parsed result length:", len(result))
+    except Exception as e:
+        print("Demo error (expected if image doesn't exist):", e)

@@ -102,5 +102,15 @@ class ConfigManager:
 
         value, is_encrypted = result
         if is_encrypted:
-            return self._decrypt(value)
+            if not self._key:
+                # Master key not present, gracefully return default instead of confusing caller
+                import logging
+                logging.warning(f"Master key missing: Cannot decrypt '{key}'. Returning default.")
+                return default
+            try:
+                return self._decrypt(value)
+            except ValueError as e:
+                import logging
+                logging.error(f"Decryption failed for '{key}': {e}")
+                return default
         return value

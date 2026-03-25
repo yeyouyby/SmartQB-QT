@@ -13,6 +13,8 @@ import os
 class MainWindow(MSFluentWindow):
     def __init__(self):
         super().__init__()
+        from src.core.ai_brain import AIBrain
+        self.ai_brain = AIBrain()
 
         self.taskInterface = TaskCenterInterface(self)
         self.draftInterface = DraftInterface(self)
