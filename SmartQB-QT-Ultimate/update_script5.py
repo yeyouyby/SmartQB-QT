@@ -1,4 +1,9 @@
-from PySide6.QtWidgets import QApplication
+import re
+
+# 9. ui/main_window.py (Refactor)
+with open('src/ui/main_window.py', 'r') as f: content = f.read()
+
+new_main = """from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 from qfluentwidgets import (NavigationItemPosition, MSFluentWindow)
@@ -53,3 +58,5 @@ def run_app(with_mcp: bool = True) -> int:
 
 if __name__ == '__main__':
     raise SystemExit(run_app(with_mcp=True))
+"""
+with open('src/ui/main_window.py', 'w') as f: f.write(new_main)

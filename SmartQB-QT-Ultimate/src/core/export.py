@@ -11,7 +11,7 @@ class Exporter:
         if not os.path.exists(self.template_dir):
             os.makedirs(self.template_dir)
 
-        self.env = Environment(loader=FileSystemLoader(self.template_dir))
+        self.env = None
 
     def export_word(self, exam_data: dict, template_name: str, output_path: str):
         """
@@ -40,5 +40,6 @@ class Exporter:
             doc.save(output_path)
             return True
         except Exception as e:
-            print(f"Export Error: {e}")
+            import logging
+            logging.exception("Export failed in export function")
             return False

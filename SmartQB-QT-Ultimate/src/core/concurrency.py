@@ -39,19 +39,26 @@ class OCRWorker(QThread):
 
             # Simulate progress while process runs
             import time
+            prog = 10
             while p.is_alive():
-                # Emit periodic fake progress updates for the progress ring
+                prog = min(99, prog + 5)
+                self.progress.emit(prog)
                 time.sleep(0.1)
 
             p.join()
             self.progress.emit(100)
 
-            result = result_queue.get()
-            if result["status"] == "success":
-                self.finished.emit(result["data"])
-            else:
-                self.error.emit(result["message"])
+            try:
+                import queue
+                result = result_queue.get(timeout=30)
+                if result["status"] == "success":
+                    self.finished.emit(result["data"])
+                else:
+                    self.error.emit(result["message"])
 
+            except queue.Empty:
+                self.error.emit("OCR Process Timeout")
+                p.terminate()
         except Exception as e:
             self.error.emit(str(e))
 
@@ -73,6 +80,9 @@ class DatabaseWorker(QThread):
         try:
             result = self.operation_func(*self.args, **self.kwargs)
             self.result_ready.emit(result)
+            except queue.Empty:
+                self.error.emit("OCR Process Timeout")
+                p.terminate()
         except Exception as e:
             self.error.emit(str(e))
 

@@ -1,7 +1,8 @@
 import time
 import lancedb
 from lancedb.pydantic import Vector, LanceModel
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+import threading
 from typing import List, Optional
 
 class SnowflakeID:
@@ -28,28 +29,36 @@ class SnowflakeID:
         self.datacenter_id = datacenter_id
         self.sequence = sequence
         self.last_timestamp = -1
+        self._lock = threading.Lock()
+
+    def _wait_next_millis(self, last_timestamp):
+        timestamp = self._get_time()
+        while timestamp <= last_timestamp:
+            timestamp = self._get_time()
+        return timestamp
 
     def _get_time(self):
         return int(time.time() * 1000)
 
     def generate(self) -> int:
-        timestamp = self._get_time()
-        if timestamp < self.last_timestamp:
-            raise Exception("Clock moved backwards")
+        with self._lock:
+            timestamp = self._get_time()
+            if timestamp < self.last_timestamp:
+                raise Exception("Clock moved backwards")
 
-        if timestamp == self.last_timestamp:
-            self.sequence = (self.sequence + 1) & self.sequence_mask
-            if self.sequence == 0:
-                timestamp = self._wait_next_millis(self.last_timestamp)
-        else:
-            self.sequence = 0
+            if timestamp == self.last_timestamp:
+                    self.sequence = (self.sequence + 1) & self.sequence_mask
+                if self.sequence == 0:
+                    timestamp = self._wait_next_millis(self.last_timestamp)
+            else:
+                    self.sequence = 0
 
-        self.last_timestamp = timestamp
+            self.last_timestamp = timestamp
 
-        return ((timestamp - self.twepoch) << self.timestamp_left_shift) | \
-               (self.datacenter_id << self.datacenter_id_shift) | \
-               (self.worker_id << self.worker_id_shift) | \
-               self.sequence
+            return ((timestamp - self.twepoch) << self.timestamp_left_shift) | \
+                   (self.datacenter_id << self.datacenter_id_shift) | \
+                   (self.worker_id << self.worker_id_shift) | \
+                   self.sequence
 
 # Create global ID generator
 snowflake = SnowflakeID()
@@ -65,7 +74,7 @@ class Question(BaseLanceEntity):
     content_md: str
     solution_md: Optional[str] = None
     difficulty: float = 0.5
-    tags: List[str] = []
+    tags: List[str] = Field(default_factory=list)
     vector: Vector(1536) # Assume OpenAI 1536-dim embeddings for now
 
 class Draft(BaseLanceEntity):

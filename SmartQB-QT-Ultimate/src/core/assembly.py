@@ -1,6 +1,6 @@
 import random
 import math
-from typing import List, Dict
+from typing import List, Dict, Any
 
 class ExamAssemblerSA:
     """
@@ -20,7 +20,7 @@ class ExamAssemblerSA:
         if not paper:
             return float('inf')
 
-        current_score = sum(q.get("score", 0) for q in paper)
+        current_score = sum(q.get("difficulty", 0.5) for q in paper) * 10
         current_diff = sum(q.get("difficulty", 0.5) for q in paper) / len(paper)
 
         # Penalties
@@ -38,7 +38,7 @@ class ExamAssemblerSA:
 
     def assemble(self, pool: List[Dict], max_size: int = 20) -> List[Dict]:
         """ Runs SA algorithm over the question pool """
-        if not pool or len(pool) < max_size:
+        if not pool or len(pool) <= max_size:
             return pool
 
         # Initial random state
@@ -53,7 +53,11 @@ class ExamAssemblerSA:
             # Generate neighbor state by swapping one random question
             new_state = list(current_state)
             idx_to_remove = random.randint(0, len(new_state) - 1)
-            new_q = random.choice([q for q in pool if q not in new_state])
+            candidates = [q for q in pool if q not in new_state]
+            if candidates:
+                new_q = random.choice(candidates)
+            else:
+                continue
             new_state[idx_to_remove] = new_q
 
             new_energy = self.energy(new_state)

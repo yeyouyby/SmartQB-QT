@@ -37,7 +37,7 @@ class PPStructureParser(BaseParser):
         # Simple extraction loop
         markdown_content = ""
         for res in result:
-            if res['type'] == 'text':
+            if isinstance(res, dict) and res.get('type') == 'text' and isinstance(res.get('res'), list) and len(res['res']) > 0 and 'text' in res['res'][0]:
                 markdown_content += res['res'][0]['text'] + "\n"
 
         # Return format expected by BaseParser

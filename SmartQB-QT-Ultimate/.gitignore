@@ -1,0 +1,5 @@
+lancedb_store/
+test_config.db
+venv/
+__pycache__/
+*.pyc
