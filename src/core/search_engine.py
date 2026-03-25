@@ -35,7 +35,7 @@ class HybridSearchEngine:
     def bm25_search(self, query: str, top_k: int = 10) -> Dict[int, float]:
         """returns {question_id: rank} using SQLite FTS5"""
         try:
-            ranks = {}
+            ranks: dict[int, float] = {}
             with sqlite3.connect(str(self.sqlite_path)) as conn:
                 cursor = conn.cursor()
                 # Robust tokenization via jieba (Handles Chinese/Math boundaries)
@@ -55,7 +55,7 @@ class HybridSearchEngine:
             logging.error(f"FTS5 Search failed: {e}")
             return {}
 
-    def dense_search(self, query: str, top_k: int = 10) -> Dict[int, int]:
+    def dense_search(self, query: str, top_k: int = 10) -> Dict[int, float]:
         """returns {question_id: rank}"""
         table = self.get_table()
         if not table:
@@ -64,9 +64,9 @@ class HybridSearchEngine:
         vector = self._embedder(query)
         results = table.search(vector).limit(top_k).to_list()
 
-        ranks = {}
+        ranks: dict[int, float] = {}
         for rank, res in enumerate(results):
-            ranks[res["id"]] = rank + 1
+            ranks[res["id"]] = float(rank + 1)
         return ranks
 
     def hybrid_search(self, query: str, top_k: int = 10, rrf_k: int = 60) -> List[Dict]:

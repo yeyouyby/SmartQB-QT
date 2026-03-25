@@ -95,7 +95,7 @@ class ConfigManager:
             )
             conn.commit()
 
-    def get_value(self, key: str, default: str = None) -> str:
+    def get_value(self, key: str, default: str = "") -> str:
         """Retrieves a value from the database, decrypting if necessary."""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()

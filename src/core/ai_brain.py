@@ -70,7 +70,7 @@ class AICorrectionWorker(QThread):
     result_ready = Signal(str)
     error = Signal(str)
 
-    def __init__(self, raw_text: str, brain: AIBrain = None):
+    def __init__(self, raw_text: str, brain: AIBrain | None = None):
         super().__init__()
         self.raw_text = raw_text
         self.brain = brain

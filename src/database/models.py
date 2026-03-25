@@ -1,4 +1,3 @@
-import warnings
 import time
 import lancedb
 from lancedb.pydantic import Vector, LanceModel
@@ -86,7 +85,7 @@ class Question(BaseLanceEntity):
     solution_md: Optional[str] = None
     difficulty: float = 0.5
     tags: List[str] = Field(default_factory=list)
-    vector: Vector(1536)  # Assume OpenAI 1536-dim embeddings for now
+    vector: Vector[1536]  # type: ignore  # Assume OpenAI 1536-dim embeddings for now
 
 
 class Draft(BaseLanceEntity):
@@ -154,9 +153,7 @@ def init_lancedb(uri: str = "./lancedb_store"):
     return db
 
 
-@warnings.deprecated(
-    "Use init_lancedb() instead. Legacy version lacks FTS5 SQLite bindings."
-)
+
 def _init_lancedb_legacy(uri: str = "./lancedb_store"):
     """Initializes LanceDB connection without FTS5 (Legacy)."""
     return init_lancedb(uri)
