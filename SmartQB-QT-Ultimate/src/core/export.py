@@ -18,7 +18,7 @@ class Exporter:
         Takes purely markdown/html content and injects into Word template placeholders.
         """
         try:
-            template_path = os.path.join(self.template_dir, template_name)
+            template_path = os.path.normpath(os.path.join(self.template_dir, os.path.basename(template_name)))
             if not os.path.exists(template_path):
                 # Create dummy template if missing
                 doc = Document()
@@ -40,6 +40,5 @@ class Exporter:
             doc.save(output_path)
             return True
         except Exception as e:
-            import logging
             logging.exception("Export failed in export function")
             return False

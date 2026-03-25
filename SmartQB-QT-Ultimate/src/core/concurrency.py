@@ -49,7 +49,6 @@ class OCRWorker(QThread):
             self.progress.emit(100)
 
             try:
-                import queue
                 result = result_queue.get(timeout=30)
                 if result["status"] == "success":
                     self.finished.emit(result["data"])
@@ -57,8 +56,7 @@ class OCRWorker(QThread):
                     self.error.emit(result["message"])
 
             except queue.Empty:
-                self.error.emit("OCR Process Timeout")
-                p.terminate()
+                self.error.emit(f"OCR Process Timeout: subprocess did not return data. Exit code: {p.exitcode}")
         except Exception as e:
             self.error.emit(str(e))
 
@@ -80,9 +78,6 @@ class DatabaseWorker(QThread):
         try:
             result = self.operation_func(*self.args, **self.kwargs)
             self.result_ready.emit(result)
-            except queue.Empty:
-                self.error.emit("OCR Process Timeout")
-                p.terminate()
         except Exception as e:
             self.error.emit(str(e))
 

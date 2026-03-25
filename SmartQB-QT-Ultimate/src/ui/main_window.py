@@ -39,9 +39,12 @@ class MainWindow(MSFluentWindow):
         w, h = desktop.width(), desktop.height()
         self.move(w//2 - self.width()//2, h//2 - self.height()//2)
 
+import sys
+
 def run_app(with_mcp: bool = True) -> int:
-    import sys
-    app = QApplication(sys.argv)
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
 
     mcp_thread = None
     if with_mcp:
@@ -49,7 +52,11 @@ def run_app(with_mcp: bool = True) -> int:
 
     window = MainWindow()
     window.show()
-    return app.exec()
+    try:
+        return app.exec()
+    finally:
+        if mcp_thread is not None and mcp_thread.is_alive():
+            mcp_thread.join(timeout=1)
 
 if __name__ == '__main__':
     raise SystemExit(run_app(with_mcp=True))

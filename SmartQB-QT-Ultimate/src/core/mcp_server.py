@@ -1,7 +1,7 @@
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import Dict, Any, List
+from typing import Any
 import threading
 import logging
 from mcp import Server
@@ -15,22 +15,21 @@ from .search_engine import HybridSearchEngine
 from .assembly import ExamAssemblerSA
 from .export import Exporter
 
-class QueryRequest(BaseModel):
-    query: str
-    max_results: int = 5
+_hybrid_engine = None
 
-class ConstraintsRequest(BaseModel):
-    target_score: int
-    target_difficulty: float
-    tags: List[str]
+def get_engine():
+    global _hybrid_engine
+    if _hybrid_engine is None:
+        _hybrid_engine = get_engine()
+    return _hybrid_engine
 
 @server.tool()
 async def sqb_hybrid_search(query: str, max_results: int = 5) -> str:
     """
     Triggers Dual Hybrid Search (LanceDB Dense + BM25 Sparse) to find exact questions.
     """
-    engine = HybridSearchEngine()
     try:
+        engine = get_engine()
         results = engine.hybrid_search(query, top_k=max_results)
         return str(results)
     except Exception as e:
@@ -42,8 +41,10 @@ async def sqb_get_config_value(key: str) -> str:
     Executes a safe read-only query on the configuration database.
     """
     import sqlite3
+    import pathlib
+    config_path = pathlib.Path(__file__).resolve().parent.parent.parent / "config.db"
     try:
-        with sqlite3.connect("config.db") as conn:
+        with sqlite3.connect(str(config_path)) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT value FROM settings WHERE key=?", (key,))
             results = cursor.fetchone()
@@ -52,14 +53,14 @@ async def sqb_get_config_value(key: str) -> str:
         return f"Query Error: {str(e)}"
 
 @server.tool()
-async def sqb_generate_exam_sa(target_score: int, target_difficulty: float, tags: List[str]) -> str:
+async def sqb_generate_exam_sa(target_score: int, target_difficulty: float, tags: list[str]) -> str:
     """
     Calls the Simulated Annealing algorithm to generate an exam paper based on constraints.
     """
     try:
         assembler = ExamAssemblerSA(target_score, target_difficulty, {"tags": tags})
-        engine = HybridSearchEngine()
-        pool = engine.db.open_table("questions").search().limit(200).to_list()
+        engine = get_engine()
+        pool = engine._get_table().search().limit(200).to_list()
         paper = assembler.assemble(pool, max_size=20)
         return f"Generated Exam Paper with {len(paper)} questions."
     except Exception as e:

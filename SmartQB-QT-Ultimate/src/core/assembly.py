@@ -20,7 +20,7 @@ class ExamAssemblerSA:
         if not paper:
             return float('inf')
 
-        current_score = sum(q.get("difficulty", 0.5) for q in paper) * 10
+        current_score = sum(q.get("score", 10) for q in paper)
         current_diff = sum(q.get("difficulty", 0.5) for q in paper) / len(paper)
 
         # Penalties
@@ -57,6 +57,7 @@ class ExamAssemblerSA:
             if candidates:
                 new_q = random.choice(candidates)
             else:
+                temp *= self.cooling_rate
                 continue
             new_state[idx_to_remove] = new_q
 
