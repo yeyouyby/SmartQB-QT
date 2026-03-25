@@ -1,73 +1,117 @@
-name: Hide Outdated PR Comments
+name: Ultimate PR Comment Manager (Fold, Summon & Ping)
 
-# 触发条件：只有在向已存在的 PR 推送新 commits 时才触发
+# 监听三种事件：PR新建/推送新代码、全局评论、单行代码审查评论
 on:
-  pull_request_target:
-    types: [synchronize]
+  pull_request:
+    types: [opened, synchronize]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
 
-# 必须赋予操作 PR 和评论的写权限
 permissions:
   pull-requests: write
   issues: write
 
 jobs:
-  fold-all-previous-comments:
+  # ==========================================
+  # 任务 1：物理清场（只有在 push 代码时触发）
+  # ==========================================
+  fold-everything:
+    # 这里的 if 确保了当有人发评论时，绝对不会触发清场！
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Fold all comments before this push
+      - name: Fold all existing comments
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const prNumber = context.issue.number;
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
+            const { owner, repo } = context.repo;
             
-            console.log(`正在扫描 PR #${prNumber} 中的旧评论...`);
+            console.log(`[步骤 1: 物理清场] 开始扫描 PR #${prNumber} 中的所有历史评论...`);
+            const { data: issueComments } = await github.rest.issues.listComments({ owner, repo, issue_number: prNumber });
+            const { data: reviewComments } = await github.rest.pulls.listReviewComments({ owner, repo, pull_number: prNumber });
 
-            // 1. 获取所有的全局普通评论 (Issue Comments)
-            const { data: issueComments } = await github.rest.issues.listComments({
-              owner,
-              repo,
-              issue_number: prNumber,
-            });
+            const allNodeIds = [...issueComments.map(c => c.node_id), ...reviewComments.map(c => c.node_id)];
 
-            // 2. 获取所有的代码行审查评论 (Review Comments)
-            const { data: reviewComments } = await github.rest.pulls.listReviewComments({
-              owner,
-              repo,
-              pull_number: prNumber,
-            });
+            if (allNodeIds.length === 0) {
+              console.log("当前 PR 很干净，无需清场。");
+              return;
+            }
 
-            // 提取所有评论的 Node ID
-            const allNodeIds = [
-              ...issueComments.map(c => c.node_id),
-              ...reviewComments.map(c => c.node_id)
-            ];
-
-            console.log(`共找到 ${allNodeIds.length} 条历史评论，准备折叠...`);
-
-            // 定义 GraphQL Mutation，将状态标记为 OUTDATED (已过期)
             const mutation = `
               mutation($subjectId: ID!) {
                 minimizeComment(input: {classifier: OUTDATED, subjectId: $subjectId}) {
-                  minimizedComment {
-                    isMinimized
-                  }
+                  minimizedComment { isMinimized }
                 }
               }
             `;
 
-            // 遍历并折叠每一个评论
-            let successCount = 0;
             for (const id of allNodeIds) {
-              try {
-                await github.graphql(mutation, { subjectId: id });
-                successCount++;
-              } catch (error) {
-                // 如果评论已经被折叠，或者因为权限原因无法折叠（比如是其他 App 生成的某些特殊评论），则跳过
-                console.log(`跳过节点 ID ${id}: 可能已被折叠或无法修改。`);
-              }
+              try { await github.graphql(mutation, { subjectId: id }); } catch (e) {}
             }
+            console.log(`[清场完毕] 成功折叠了 ${allNodeIds.length} 条旧评论！`);
+
+  # ==========================================
+  # 任务 2：召唤 AI（在打扫战场后入场）
+  # ==========================================
+  summon-ais:
+    needs: fold-everything # 必须等待 fold-everything 完成
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send commands to wake up AIs
+        uses: actions/github-script@v7
+        with:
+          # 召唤 AI 必须使用你的马甲 Token
+          github-token: ${{ secrets.MY_PERSONAL_TOKEN }}
+          script: |
+            const prNumber = context.issue.number || context.payload.pull_request.number;
+            const { owner, repo } = context.repo;
             
-            console.log(`执行完毕！成功折叠了 ${successCount} 条过期评论。`);
+            const commands = ["/gemini review", "@sourcery-ai review", "@coderabbitai review"];
+            console.log(`[步骤 2: 召唤 AI] 战场已清理，准备在 PR #${prNumber} 中召唤 AI...`);
+            
+            for (const cmd of commands) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body: cmd });
+              console.log(`已发送召唤口令: ${cmd}`);
+            }
+
+  # ==========================================
+  # 任务 3：狙击手模式（监听 AI 发言并 @jules）
+  # ==========================================
+  ping-jules:
+    # 只有在发生评论事件时才触发，并且必须不是你、不是Jules、不是官方Bot
+    if: >-
+      (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
+      github.event.comment.user.login != 'yeyouyby' && 
+      github.event.comment.user.login != 'jules' && 
+      github.event.comment.user.login != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reply to AI and ping @jules
+        uses: actions/github-script@v7
+        with:
+          # 披上你的马甲，以你的身份去 @jules
+          github-token: ${{ secrets.MY_PERSONAL_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const eventName = context.eventName;
+            const replyBody = "@jules 请注意查看并处理这部分 AI 审查意见 👆";
+            
+            if (eventName === 'issue_comment') {
+              const issueNumber = context.payload.issue.number;
+              await github.rest.issues.createComment({
+                owner: owner, repo: repo, issue_number: issueNumber, body: replyBody
+              });
+              console.log(`[狙击成功] 已在 PR #${issueNumber} 的全局评论下 @jules`);
+            } else if (eventName === 'pull_request_review_comment') {
+              const pullNumber = context.payload.pull_request.number;
+              const commentId = context.payload.comment.id;
+              await github.rest.pulls.createReplyForReviewComment({
+                owner: owner, repo: repo, pull_number: pullNumber, comment_id: commentId, body: replyBody
+              });
+              console.log(`[狙击成功] 已在 PR #${pullNumber} 的单行代码评论下 @jules`);
+            }
