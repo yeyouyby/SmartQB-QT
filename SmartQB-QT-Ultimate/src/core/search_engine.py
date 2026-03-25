@@ -1,10 +1,9 @@
 import logging
 import jieba
-from typing import List, Dict, Any
+from typing import List, Dict
 import lancedb
 import sqlite3
 import pathlib
-import numpy as np
 
 
 class HybridSearchEngine:

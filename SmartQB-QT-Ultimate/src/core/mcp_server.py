@@ -1,22 +1,16 @@
-from typing import Any
-import threading
-import logging
 from mcp import Server
-import sys
 import os
 import pathlib
-import re
 from werkzeug.utils import secure_filename
 from src.database.config_manager import ConfigManager
 import anyio
 import mcp.server.stdio
-
-server = Server("smartqb-mcp")
-
-# --- Dependencies ---
 from .search_engine import HybridSearchEngine
 from .assembly import ExamAssemblerSA
 from .export import Exporter
+
+server = Server("smartqb-mcp")
+
 
 _hybrid_engine = None
 

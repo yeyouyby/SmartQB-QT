@@ -1,11 +1,9 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QPushButton
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTableWidgetItem
+from PySide6.QtCore import Qt
 from qfluentwidgets import (
     PrimaryPushButton,
     TableWidget,
-    CardWidget,
     TitleLabel,
-    BodyLabel,
     IndeterminateProgressRing,
     InfoBar,
     InfoBarPosition,

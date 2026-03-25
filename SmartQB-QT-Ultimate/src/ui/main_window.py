@@ -1,7 +1,6 @@
 import sys
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import Qt
 from qfluentwidgets import NavigationItemPosition, MSFluentWindow
 
 from .views.task_center import TaskCenterInterface

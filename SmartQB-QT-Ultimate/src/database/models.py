@@ -1,7 +1,8 @@
+import warnings
 import time
 import lancedb
 from lancedb.pydantic import Vector, LanceModel
-from pydantic import BaseModel, Field
+from pydantic import Field
 import threading
 from typing import List, Optional
 
@@ -153,7 +154,6 @@ def init_lancedb(uri: str = "./lancedb_store"):
     return db
 
 
-import warnings
 
 
 @warnings.deprecated(

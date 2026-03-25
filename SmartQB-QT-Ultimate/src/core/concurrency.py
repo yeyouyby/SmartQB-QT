@@ -1,7 +1,6 @@
 import queue
 import multiprocessing as mp
 from PySide6.QtCore import QThread, Signal
-from typing import Dict, Any, List
 from .parser import PPStructureParser
 import logging
 import json

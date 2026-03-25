@@ -4,16 +4,12 @@ from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtCore import Qt, QUrl
 from qfluentwidgets import (
     TextEdit,
-    ToolButton,
     PrimaryPushButton,
     ListWidget,
     ListWidgetItem,
-    Flyout,
-    FlyoutView,
     InfoBar,
 )
-import os
-from src.core.ai_brain import AICorrectionWorker, AIBrain
+from src.core.ai_brain import AICorrectionWorker
 
 
 class DraftInterface(QWidget):

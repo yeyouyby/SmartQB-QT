@@ -1,7 +1,6 @@
 import logging
 import os
 from docx import Document
-from jinja2 import Environment, FileSystemLoader
 
 
 class Exporter:
@@ -49,6 +48,6 @@ class Exporter:
 
             doc.save(output_path)
             return True
-        except Exception as e:
+        except Exception:
             logging.exception("Export failed in export function")
             return False

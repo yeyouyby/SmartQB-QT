@@ -1,8 +1,7 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QApplication
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
 from PySide6.QtCore import Qt, QTimer, QTime
 from PySide6.QtGui import QFont
 from qfluentwidgets import (
-    PrimaryPushButton,
     TitleLabel,
     BodyLabel,
     TextEdit,
