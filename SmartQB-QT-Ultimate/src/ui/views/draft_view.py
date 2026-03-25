@@ -48,28 +48,10 @@ class DraftInterface(QWidget):
         self.taskList.addItem(ListWidgetItem("Draft 2 - Physics Test"))
 
     def init_cherry_markdown(self):
-        html_content = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <title>Cherry Markdown Preview</title>
-            <style>
-                body { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial; padding: 20px; }
-                h1 { color: #0078D4; }
-                .preview-box { border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; }
-            </style>
-        </head>
-        <body>
-            <h1>Preview (Cherry Markdown)</h1>
-            <div class="preview-box">
-                <p>Loading Cherry Markdown Editor...</p>
-                <p>Formula Example: $$ x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} $$</p>
-            </div>
-        </body>
-        </html>
-        """
-        self.previewView.setHtml(html_content)
+        import pathlib
+        # Load internal editor UI directly from local assets ensuring no network drops
+        editor_path = pathlib.Path(__file__).resolve().parent.parent.parent / "assets" / "editor" / "index.html"
+        self.previewView.load(QUrl.fromLocalFile(str(editor_path)))
 
     def trigger_ai_correction(self):
         self.aiCorrectBtn.setDisabled(True)

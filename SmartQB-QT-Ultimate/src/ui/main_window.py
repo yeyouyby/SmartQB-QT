@@ -7,7 +7,6 @@ from .views.task_center import TaskCenterInterface
 from .views.draft_view import DraftInterface
 from .views.exam_bag import ExamBagInterface
 from .views.zen_mode import ZenModeInterface
-from src.core.mcp_server import start_mcp_server_bg
 import os
 
 class MainWindow(MSFluentWindow):
@@ -46,17 +45,12 @@ def run_app(with_mcp: bool = True) -> int:
     if app is None:
         app = QApplication(sys.argv)
 
-    mcp_thread = None
-    if with_mcp:
-        mcp_thread = start_mcp_server_bg()
-
     window = MainWindow()
     window.show()
     try:
         return app.exec()
     finally:
-        if mcp_thread is not None and mcp_thread.is_alive():
-            mcp_thread.join(timeout=1)
+        pass
 
 if __name__ == '__main__':
     raise SystemExit(run_app(with_mcp=True))

@@ -21,10 +21,20 @@ class OCRWorker(QThread):
     @staticmethod
     def _run_ocr_process(file_path: str, result_queue: mp.Queue):
         """ Runs in an isolated multiprocessing process to prevent GIL blocking. """
+        import json
+        import uuid
+        import os
+        import tempfile
         try:
             parser = PPStructureParser()
             result = parser.parse(file_path)
-            result_queue.put({"status": "success", "data": result})
+
+            # Serialize result to a temporary JSON file to avoid memory explosion & IPC queue limits
+            temp_path = os.path.join(tempfile.gettempdir(), f"ocr_result_{uuid.uuid4().hex}.json")
+            with open(temp_path, "w", encoding="utf-8") as tf:
+                json.dump(result, tf)
+
+            result_queue.put({"status": "success", "data_file": temp_path})
         except Exception as e:
             result_queue.put({"status": "error", "message": str(e)})
 
@@ -50,9 +60,13 @@ class OCRWorker(QThread):
             self.progress.emit(100)
 
             try:
+                import json
                 result = result_queue.get(timeout=30)
                 if result["status"] == "success":
-                    self.finished.emit(result["data"])
+                    data_file = result["data_file"]
+                    with open(data_file, "r", encoding="utf-8") as df:
+                        parsed_data = json.load(df)
+                    self.finished.emit(parsed_data)
                 else:
                     self.error.emit(result["message"])
 

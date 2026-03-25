@@ -105,6 +105,37 @@ def init_lancedb(uri: str = "./lancedb_store"):
     """Initializes the database connection and creates tables if they don't exist"""
     db = lancedb.connect(uri)
 
+    # Create LanceDB tables
+    if "questions" not in db.list_tables():
+        db.create_table("questions", schema=Question)
+    if "drafts" not in db.list_tables():
+        db.create_table("drafts", schema=Draft)
+    if "exambags" not in db.list_tables():
+        db.create_table("exambags", schema=ExamBag)
+    if "examgroups" not in db.list_tables():
+        db.create_table("examgroups", schema=ExamGroup)
+    if "questionmaps" not in db.list_tables():
+        db.create_table("questionmaps", schema=QuestionMap)
+
+    # Initialize SQLite FTS5 for hybrid search BM25 persistence
+    import sqlite3
+    import pathlib
+    config_path = pathlib.Path(__file__).resolve().parent.parent.parent / "config.db"
+    with sqlite3.connect(str(config_path)) as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE VIRTUAL TABLE IF NOT EXISTS questions_fts USING fts5(
+                question_id UNINDEXED,
+                content_md
+            )
+        ''')
+        conn.commit()
+
+    return db
+def __deprecated_init_lancedb(uri: str = "./lancedb_store"):
+    """Initializes the database connection and creates tables if they don't exist"""
+    db = lancedb.connect(uri)
+
     # Create tables
     if "questions" not in db.list_tables():
         db.create_table("questions", schema=Question)

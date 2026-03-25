@@ -1,43 +1,51 @@
 from typing import List, Dict, Any
 import lancedb
-from rank_bm25 import BM25Okapi
+import sqlite3
+import pathlib
 import numpy as np
 
 class HybridSearchEngine:
     """
-    Combines Dense Vector Retrieval (LanceDB) and Sparse Retrieval (BM25)
+    Combines Dense Vector Retrieval (LanceDB) and Sparse Retrieval (SQLite FTS5 BM25)
     using Reciprocal Rank Fusion (RRF) for ultimate accuracy.
     """
     def __init__(self, db_path="./lancedb_store"):
         self.db = lancedb.connect(db_path)
+        self.sqlite_path = pathlib.Path(__file__).resolve().parent.parent.parent / "config.db"
+
         # In a real app, this vectorizer would call OpenAI/BGE embeddings
-        # For now, we simulate embedding function
-        self._embedder = lambda x: [0.0] * 1536
+        self._embedder = self._placeholder_embedder
+
+    def _placeholder_embedder(self, query: str):
+        import logging
+        logging.warning("Using placeholder embedder; integrate real embedding service before production.")
+        return [0.0] * 1536
 
     def _get_table(self):
-        if "questions" not in self.db.table_names():
+        if "questions" not in self.db.list_tables():
             return None
         return self.db.open_table("questions")
 
-    def bm25_search(self, query: str, questions: List[Dict], top_k: int = 10) -> Dict[int, int]:
-        """ returns {question_id: rank} """
-        if not questions:
+    def bm25_search(self, query: str, top_k: int = 10) -> Dict[int, float]:
+        """ returns {question_id: rank} using SQLite FTS5 """
+        try:
+            ranks = {}
+            with sqlite3.connect(str(self.sqlite_path)) as conn:
+                cursor = conn.cursor()
+                # Normalize query to SQLite FTS5 Match syntax
+                match_query = ' OR '.join([f'"{q}"' for q in query.replace('"', '').split()])
+                cursor.execute(
+                    "SELECT question_id, rank FROM questions_fts WHERE questions_fts MATCH ? ORDER BY rank LIMIT ?",
+                    (match_query, top_k)
+                )
+                for i, row in enumerate(cursor.fetchall()):
+                    q_id = int(row[0])
+                    ranks[q_id] = i + 1
+            return ranks
+        except Exception as e:
+            import logging
+            logging.error(f"FTS5 Search failed: {e}")
             return {}
-
-        tokenized_corpus = [q["content_md"].split(" ") for q in questions]
-        bm25 = BM25Okapi(tokenized_corpus)
-        tokenized_query = query.split(" ")
-
-        scores = bm25.get_scores(tokenized_query)
-        # Get indices sorted by score descending
-        top_indices = np.argsort(scores)[::-1][:top_k]
-
-        ranks = {}
-        for rank, idx in enumerate(top_indices):
-            if scores[idx] > 0: # Only keep positive matches
-                q_id = questions[idx]["id"]
-                ranks[q_id] = rank + 1
-        return ranks
 
     def dense_search(self, query: str, top_k: int = 10) -> Dict[int, int]:
         """ returns {question_id: rank} """
@@ -46,7 +54,6 @@ class HybridSearchEngine:
             return {}
 
         vector = self._embedder(query)
-        # LanceDB Search
         results = table.search(vector).limit(top_k).to_list()
 
         ranks = {}
@@ -60,13 +67,9 @@ class HybridSearchEngine:
         if not table:
             return []
 
-        # Fetch all questions for BM25 local corpus (in prod, use Tantivy/Elasticsearch for huge datasets)
-        all_questions = table.search().limit(1000).to_list()
-
-        bm25_ranks = self.bm25_search(query, all_questions, top_k=50)
+        bm25_ranks = self.bm25_search(query, top_k=50)
         dense_ranks = self.dense_search(query, top_k=50)
 
-        # RRF Fusion
         rrf_scores = {}
         all_ids = set(bm25_ranks.keys()).union(set(dense_ranks.keys()))
 
@@ -78,16 +81,18 @@ class HybridSearchEngine:
                 score += 1.0 / (rrf_k + bm25_ranks[q_id])
             rrf_scores[q_id] = score
 
-        # Sort by RRF score descending
         sorted_ids = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
 
-        # Hydrate results
         final_results = []
-        id_to_q = {q["id"]: q for q in all_questions}
         for q_id, score in sorted_ids:
-            if q_id in id_to_q:
-                q = id_to_q[q_id]
-                q["_rrf_score"] = score
-                final_results.append(q)
+            try:
+                # Query LanceDB directly for the specific hydrated ID
+                result = table.search().where(f"id = {q_id}").limit(1).to_list()
+                if result:
+                    q = result[0]
+                    q["_rrf_score"] = score
+                    final_results.append(q)
+            except Exception:
+                continue
 
         return final_results

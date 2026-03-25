@@ -92,21 +92,17 @@ async def sqb_export_paper(bag_id: str, template_name: str) -> str:
         return f"Successfully exported to {output_file}"
     return "Export Failed"
 
-def start_mcp_server_bg():
-    """
-    Starts the FastMCP/SSE server in a daemon thread so it runs alongside the PySide6 app.
-    """
-    def _run():
-        logging.info("Starting background MCP Server on port 8000...")
-        import anyio
-        # Run using an SSE server or direct FastMCP bindings depending on library version
-        uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")
-
-    t = threading.Thread(target=_run, daemon=True)
-    t.start()
-    return t
-
 if __name__ == "__main__":
-    start_mcp_server_bg()
-    import time
-    time.sleep(10)
+    # Run as a standalone script using stdio transport for Claude Desktop integration
+    import anyio
+    import mcp.server.stdio
+
+    async def main():
+        async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+            await server.run(
+                read_stream,
+                write_stream,
+                server.create_initialization_options()
+            )
+
+    anyio.run(main)
