@@ -2,11 +2,15 @@ import random
 import math
 from typing import List, Dict, Any
 
+
 class ExamAssemblerSA:
     """
     Simulated Annealing algorithm for intelligent exam generation.
     """
-    def __init__(self, target_score: int, target_difficulty: float, constraints: Dict[str, Any]):
+
+    def __init__(
+        self, target_score: int, target_difficulty: float, constraints: Dict[str, Any]
+    ):
         self.target_score = target_score
         self.target_difficulty = target_difficulty
         self.constraints = constraints
@@ -16,9 +20,9 @@ class ExamAssemblerSA:
         self.min_temp = 0.1
 
     def energy(self, paper: List[Dict]) -> float:
-        """ Calculate how far the current paper is from the target. Lower is better. """
+        """Calculate how far the current paper is from the target. Lower is better."""
         if not paper:
-            return float('inf')
+            return float("inf")
 
         current_score = sum(q.get("score", 10) for q in paper)
         current_diff = sum(q.get("difficulty", 0.5) for q in paper) / len(paper)
@@ -37,7 +41,7 @@ class ExamAssemblerSA:
         return score_penalty + diff_penalty + tag_penalty
 
     def assemble(self, pool: List[Dict], max_size: int = 20) -> List[Dict]:
-        """ Runs SA algorithm over the question pool """
+        """Runs SA algorithm over the question pool"""
         if not pool or len(pool) <= max_size:
             return pool
 
@@ -54,8 +58,8 @@ class ExamAssemblerSA:
             # Generate neighbor state by swapping one random question
             new_state = list(current_state)
             idx_to_remove = random.randint(0, len(new_state) - 1)
-            new_state_ids = {q['id'] for q in new_state}
-            candidates = [q for q in pool if q['id'] not in new_state_ids]
+            new_state_ids = {q["id"] for q in new_state}
+            candidates = [q for q in pool if q["id"] not in new_state_ids]
             if candidates:
                 new_q = random.choice(candidates)
             else:

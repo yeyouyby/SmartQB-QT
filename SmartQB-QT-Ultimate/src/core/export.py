@@ -3,10 +3,12 @@ import os
 from docx import Document
 from jinja2 import Environment, FileSystemLoader
 
+
 class Exporter:
     """
     Exports Markdown content into Word Document templates via python-docx & Jinja2.
     """
+
     def __init__(self, template_dir="templates"):
         self.template_dir = template_dir
         if not os.path.exists(self.template_dir):
@@ -19,12 +21,14 @@ class Exporter:
         Takes purely markdown/html content and injects into Word template placeholders.
         """
         try:
-            template_path = os.path.normpath(os.path.join(self.template_dir, os.path.basename(template_name)))
+            template_path = os.path.normpath(
+                os.path.join(self.template_dir, os.path.basename(template_name))
+            )
             if not os.path.exists(template_path):
                 # Create dummy template if missing
                 doc = Document()
-                doc.add_heading('{{ school_name }} Exam', 0)
-                doc.add_paragraph('{{ content }}')
+                doc.add_heading("{{ school_name }} Exam", 0)
+                doc.add_paragraph("{{ content }}")
                 doc.save(template_path)
 
             # Using python-docx for native parsing instead of simple Jinja due to OOXML format
@@ -32,11 +36,16 @@ class Exporter:
             doc = Document(template_path)
 
             for p in doc.paragraphs:
-                if '{{ school_name }}' in p.text:
-                    p.text = p.text.replace('{{ school_name }}', exam_data.get("school", "SmartQB Academy"))
-                if '{{ content }}' in p.text:
+                if "{{ school_name }}" in p.text:
+                    p.text = p.text.replace(
+                        "{{ school_name }}", exam_data.get("school", "SmartQB Academy")
+                    )
+                if "{{ content }}" in p.text:
                     # In real app, replace with converted Markdown HTML blocks
-                    p.text = p.text.replace('{{ content }}', exam_data.get("markdown", "Questions go here..."))
+                    p.text = p.text.replace(
+                        "{{ content }}",
+                        exam_data.get("markdown", "Questions go here..."),
+                    )
 
             doc.save(output_path)
             return True

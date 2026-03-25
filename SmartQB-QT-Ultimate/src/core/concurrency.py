@@ -15,6 +15,7 @@ class OCRWorker(QThread):
     Handles heavy OCR tasks asynchronously without blocking the PySide6 UI loop.
     Uses QThread to manage multiprocessing calls.
     """
+
     finished = Signal(list)
     error = Signal(str)
     progress = Signal(int)
@@ -25,13 +26,15 @@ class OCRWorker(QThread):
 
     @staticmethod
     def _run_ocr_process(file_path: str, result_queue: mp.Queue):
-        """ Runs in an isolated multiprocessing process to prevent GIL blocking. """
+        """Runs in an isolated multiprocessing process to prevent GIL blocking."""
         try:
             parser = PPStructureParser()
             result = parser.parse(file_path)
 
             # Serialize result to a temporary JSON file to avoid memory explosion & IPC queue limits
-            temp_path = os.path.join(tempfile.gettempdir(), f"ocr_result_{uuid.uuid4().hex}.json")
+            temp_path = os.path.join(
+                tempfile.gettempdir(), f"ocr_result_{uuid.uuid4().hex}.json"
+            )
             with open(temp_path, "w", encoding="utf-8") as tf:
                 json.dump(result, tf)
 
@@ -40,17 +43,20 @@ class OCRWorker(QThread):
             result_queue.put({"status": "error", "message": str(e)})
 
     def run(self):
-        """ Called when thread.start() is invoked. """
+        """Called when thread.start() is invoked."""
         try:
             self.progress.emit(10)
             result_queue = mp.Queue()
 
             # Start process
-            p = mp.Process(target=self._run_ocr_process, args=(self.file_path, result_queue))
+            p = mp.Process(
+                target=self._run_ocr_process, args=(self.file_path, result_queue)
+            )
             p.start()
 
             # Simulate progress while process runs
             import time
+
             prog = 10
             while p.is_alive():
                 prog = min(99, prog + 5)
@@ -72,7 +78,9 @@ class OCRWorker(QThread):
                     self.error.emit(result["message"])
 
             except queue.Empty:
-                self.error.emit(f"OCR Process Timeout: subprocess did not return data. Exit code: {p.exitcode}")
+                self.error.emit(
+                    f"OCR Process Timeout: subprocess did not return data. Exit code: {p.exitcode}"
+                )
         except Exception as e:
             self.error.emit(str(e))
 
@@ -81,6 +89,7 @@ class DatabaseWorker(QThread):
     """
     Handles background database operations (LanceDB search/insert, SQLite operations).
     """
+
     result_ready = Signal(object)
     error = Signal(str)
 
@@ -96,6 +105,7 @@ class DatabaseWorker(QThread):
             self.result_ready.emit(result)
         except Exception as e:
             self.error.emit(str(e))
+
 
 if __name__ == "__main__":
     logging.info("Concurrency layer loaded.")

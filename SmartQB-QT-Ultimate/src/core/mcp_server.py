@@ -11,7 +11,6 @@ from src.database.config_manager import ConfigManager
 import anyio
 import mcp.server.stdio
 
-
 server = Server("smartqb-mcp")
 
 # --- Dependencies ---
@@ -21,11 +20,13 @@ from .export import Exporter
 
 _hybrid_engine = None
 
+
 def get_engine():
     global _hybrid_engine
     if _hybrid_engine is None:
         _hybrid_engine = HybridSearchEngine()
     return _hybrid_engine
+
 
 @server.tool()
 async def sqb_hybrid_search(query: str, max_results: int = 5) -> str:
@@ -39,15 +40,17 @@ async def sqb_hybrid_search(query: str, max_results: int = 5) -> str:
     except Exception as e:
         return f"Search Error: {str(e)}"
 
+
 @server.tool()
 async def sqb_get_config_value(key: str) -> str:
     """
     Executes a safe read-only query on the configuration database.
     """
 
-
-
-    config_path = os.environ.get("SMARTQB_CONFIG_PATH", str(pathlib.Path(__file__).resolve().parent.parent.parent / "config.db"))
+    config_path = os.environ.get(
+        "SMARTQB_CONFIG_PATH",
+        str(pathlib.Path(__file__).resolve().parent.parent.parent / "config.db"),
+    )
     try:
         cm = ConfigManager(str(config_path))
         # Master key setup is not possible statelessly without a password prompt.
@@ -60,8 +63,11 @@ async def sqb_get_config_value(key: str) -> str:
     except Exception as e:
         return f"Query Error: {str(e)}"
 
+
 @server.tool()
-async def sqb_generate_exam_sa(target_score: int, target_difficulty: float, tags: list[str]) -> str:
+async def sqb_generate_exam_sa(
+    target_score: int, target_difficulty: float, tags: list[str]
+) -> str:
     """
     Calls the Simulated Annealing algorithm to generate an exam paper based on constraints.
     """
@@ -76,6 +82,7 @@ async def sqb_generate_exam_sa(target_score: int, target_difficulty: float, tags
         return f"Generated Exam Paper with {len(paper)} questions."
     except Exception as e:
         return f"Generation Error: {str(e)}"
+
 
 @server.tool()
 async def sqb_export_paper(bag_id: str, template_name: str) -> str:
@@ -97,9 +104,18 @@ async def sqb_export_paper(bag_id: str, template_name: str) -> str:
         table = get_engine().get_table()
         if table:
             # Here we simulate aggregating question markdown from mapped question IDs.
-            bag_res = get_engine().db.open_table("exambags").search().where(f"id = {clean_bag_id}").limit(1).to_list()
+            bag_res = (
+                get_engine()
+                .db.open_table("exambags")
+                .search()
+                .where(f"id = {clean_bag_id}")
+                .limit(1)
+                .to_list()
+            )
             if bag_res:
-                real_markdown = f"# Exam {bag_res[0].get('title', '')}\n\nGenerated content..."
+                real_markdown = (
+                    f"# Exam {bag_res[0].get('title', '')}\n\nGenerated content..."
+                )
             else:
                 real_markdown = f"# Exam {clean_bag_id}\n\n(No questions mapped)"
         else:
@@ -113,15 +129,14 @@ async def sqb_export_paper(bag_id: str, template_name: str) -> str:
         return f"Successfully exported to {output_file}"
     return "Export Failed"
 
+
 if __name__ == "__main__":
     # Run as a standalone script using stdio transport for Claude Desktop integration
 
     async def main():
         async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
             await server.run(
-                read_stream,
-                write_stream,
-                server.create_initialization_options()
+                read_stream, write_stream, server.create_initialization_options()
             )
 
     anyio.run(main)

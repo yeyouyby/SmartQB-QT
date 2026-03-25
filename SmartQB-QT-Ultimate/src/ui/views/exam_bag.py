@@ -1,7 +1,14 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
 from PySide6.QtCore import Qt
-from qfluentwidgets import (PrimaryPushButton, TitleLabel, CardWidget, BodyLabel,
-                            FlowLayout, SearchLineEdit)
+from qfluentwidgets import (
+    PrimaryPushButton,
+    TitleLabel,
+    CardWidget,
+    BodyLabel,
+    FlowLayout,
+    SearchLineEdit,
+)
+
 
 class ExamBagInterface(QWidget):
     def __init__(self, parent=None):
@@ -39,7 +46,12 @@ class ExamBagInterface(QWidget):
             card = CardWidget(self)
             card.setFixedSize(250, 150)
             cardLayout = QVBoxLayout(card)
-            cardLayout.addWidget(BodyLabel(f"Mock Question #{100+i}\nTopic: Mechanics\nTags: #Force #Acceleration", card))
+            cardLayout.addWidget(
+                BodyLabel(
+                    f"Mock Question #{100+i}\nTopic: Mechanics\nTags: #Force #Acceleration",
+                    card,
+                )
+            )
             self.flowLayout.addWidget(card)
 
         self.layout.addWidget(self.flowLayoutWidget)
@@ -47,9 +59,11 @@ class ExamBagInterface(QWidget):
     def on_saBtn_clicked(self):
         # TODO: Implement full Simulated Annealing UI popup logic
         import logging
+
         logging.info("SA Generation triggered. UI placeholder.")
 
     def on_exportBtn_clicked(self):
         # TODO: Implement Word Export dialog UI
         import logging
+
         logging.info("Export pipeline triggered. UI placeholder.")

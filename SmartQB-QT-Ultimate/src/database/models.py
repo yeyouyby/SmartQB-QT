@@ -5,13 +5,15 @@ from pydantic import BaseModel, Field
 import threading
 from typing import List, Optional
 
+
 class SnowflakeID:
     """
     Generates pure digital, time-ordered, natural anti-collision IDs.
     Very fast for retrieval.
     """
+
     def __init__(self, datacenter_id=1, worker_id=1, sequence=0):
-        self.twepoch = 1609459200000 # 2021-01-01
+        self.twepoch = 1609459200000  # 2021-01-01
         self.datacenter_id_bits = 5
         self.worker_id_bits = 5
         self.sequence_bits = 12
@@ -21,7 +23,9 @@ class SnowflakeID:
 
         self.worker_id_shift = self.sequence_bits
         self.datacenter_id_shift = self.sequence_bits + self.worker_id_bits
-        self.timestamp_left_shift = self.sequence_bits + self.worker_id_bits + self.datacenter_id_bits
+        self.timestamp_left_shift = (
+            self.sequence_bits + self.worker_id_bits + self.datacenter_id_bits
+        )
 
         self.sequence_mask = -1 ^ (-1 << self.sequence_bits)
 
@@ -55,10 +59,13 @@ class SnowflakeID:
 
             self.last_timestamp = timestamp
 
-            return ((timestamp - self.twepoch) << self.timestamp_left_shift) | \
-                   (self.datacenter_id << self.datacenter_id_shift) | \
-                   (self.worker_id << self.worker_id_shift) | \
-                   self.sequence
+            return (
+                ((timestamp - self.twepoch) << self.timestamp_left_shift)
+                | (self.datacenter_id << self.datacenter_id_shift)
+                | (self.worker_id << self.worker_id_shift)
+                | self.sequence
+            )
+
 
 # Create global ID generator
 snowflake = SnowflakeID()
@@ -66,36 +73,47 @@ snowflake = SnowflakeID()
 
 # ---- LanceDB Data Models (Pydantic based) ----
 
+
 class BaseLanceEntity(LanceModel):
-    id: int # Snowflake ID
+    id: int  # Snowflake ID
+
 
 class Question(BaseLanceEntity):
     """Core Questions stored in standard Markdown + MathJax ($$) format"""
+
     content_md: str
     solution_md: Optional[str] = None
     difficulty: float = 0.5
     tags: List[str] = Field(default_factory=list)
-    vector: Vector(1536) # Assume OpenAI 1536-dim embeddings for now
+    vector: Vector(1536)  # Assume OpenAI 1536-dim embeddings for now
+
 
 class Draft(BaseLanceEntity):
     """Temporary storage (暂存区/草稿箱) for documents waiting for code review"""
+
     original_file: str
     parsed_md: str
-    status: str = "pending" # pending, reviewing, approved
+    status: str = "pending"  # pending, reviewing, approved
+
 
 class ExamGroup(BaseLanceEntity):
     """Logical grouping in an ExamBag (e.g. '一、选择题')"""
+
     title: str
     description: Optional[str] = ""
 
+
 class ExamBag(BaseLanceEntity):
     """Collection of groups forming a complete test."""
+
     title: str
-    created_at: int # Timestamp
-    group_ids: List[int] # Reference to ExamGroup
+    created_at: int  # Timestamp
+    group_ids: List[int]  # Reference to ExamGroup
+
 
 class QuestionMap(BaseLanceEntity):
     """Maps ExamGroups to Question IDs to avoid duplication"""
+
     group_id: int
     question_id: int
     order_idx: int
@@ -120,21 +138,27 @@ def init_lancedb(uri: str = "./lancedb_store"):
     # Initialize SQLite FTS5 for hybrid search BM25 persistence
     import sqlite3
     import pathlib
+
     config_path = pathlib.Path(__file__).resolve().parent.parent.parent / "config.db"
     with sqlite3.connect(str(config_path)) as conn:
         cursor = conn.cursor()
-        cursor.execute('''
+        cursor.execute("""
             CREATE VIRTUAL TABLE IF NOT EXISTS questions_fts USING fts5(
                 question_id UNINDEXED,
                 content_md
             )
-        ''')
+        """)
         conn.commit()
 
     return db
+
+
 import warnings
 
-@warnings.deprecated("Use init_lancedb() instead. Legacy version lacks FTS5 SQLite bindings.")
+
+@warnings.deprecated(
+    "Use init_lancedb() instead. Legacy version lacks FTS5 SQLite bindings."
+)
 def _init_lancedb_legacy(uri: str = "./lancedb_store"):
     """Initializes LanceDB connection without FTS5 (Legacy)."""
     return init_lancedb(uri)

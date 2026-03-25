@@ -1,8 +1,16 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QPushButton
 from PySide6.QtCore import Qt, QTimer
-from qfluentwidgets import (PrimaryPushButton, TableWidget, CardWidget,
-                            TitleLabel, BodyLabel, IndeterminateProgressRing,
-                            InfoBar, InfoBarPosition)
+from qfluentwidgets import (
+    PrimaryPushButton,
+    TableWidget,
+    CardWidget,
+    TitleLabel,
+    BodyLabel,
+    IndeterminateProgressRing,
+    InfoBar,
+    InfoBarPosition,
+)
+
 
 class TaskCenterInterface(QWidget):
     def __init__(self, parent=None):
@@ -22,7 +30,9 @@ class TaskCenterInterface(QWidget):
         # Task Table setup
         self.taskTable = TableWidget(self)
         self.taskTable.setColumnCount(4)
-        self.taskTable.setHorizontalHeaderLabels(['Task ID', 'File', 'Status', 'Progress'])
+        self.taskTable.setHorizontalHeaderLabels(
+            ["Task ID", "File", "Status", "Progress"]
+        )
         self.layout.addWidget(self.taskTable)
 
         self.layout.setContentsMargins(20, 20, 20, 20)
@@ -46,11 +56,11 @@ class TaskCenterInterface(QWidget):
         self.taskTable.setCellWidget(row, 3, progressWidget)
 
         InfoBar.success(
-            title='解析开始',
+            title="解析开始",
             content="后台 OCR 已启动，请稍候查看暂存区。",
             orient=Qt.Horizontal,
             isClosable=True,
             position=InfoBarPosition.TOP_RIGHT,
             duration=2000,
-            parent=self
+            parent=self,
         )

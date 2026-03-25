@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict
 import logging
 
+
 class BaseParser(ABC):
     @abstractmethod
     def parse(self, file_path: str) -> List[Dict]:
@@ -11,10 +12,12 @@ class BaseParser(ABC):
         """
         pass
 
+
 class PPStructureParser(BaseParser):
     def __init__(self):
         try:
             from paddleocr import PPStructure
+
             # Initialize PaddleOCR engine, turning on MKLDNN (CPU optimized)
             self.engine = PPStructure(show_log=False, use_gpu=False, enable_mkldnn=True)
             logging.info("PP-StructureV3 Initialized for CPU.")
@@ -28,6 +31,7 @@ class PPStructureParser(BaseParser):
 
         # Pseudo-implementation of parser (replace with actual PP-Structure logic)
         import cv2
+
         img = cv2.imread(file_path)
         if img is None:
             raise FileNotFoundError(f"Could not read image: {file_path}")
@@ -38,19 +42,27 @@ class PPStructureParser(BaseParser):
         markdown_content = ""
         for res in result:
             try:
-                if res.get('type') == 'text':
+                if res.get("type") == "text":
                     # Safe extraction helper logic
-                    text_lines = [r.get('text', '') for r in res.get('res', []) if isinstance(r, dict)]
+                    text_lines = [
+                        r.get("text", "")
+                        for r in res.get("res", [])
+                        if isinstance(r, dict)
+                    ]
                     markdown_content += " ".join(text_lines) + "\n"
             except (TypeError, KeyError) as e:
                 import logging
-                logging.error(f"OCR parsing skipped entry due to structure change: {e} - Row: {res}")
+
+                logging.error(
+                    f"OCR parsing skipped entry due to structure change: {e} - Row: {res}"
+                )
                 continue
 
         # Return format expected by BaseParser
         return [{"markdown_content": markdown_content, "images": {}, "page_num": 1}]
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     parser = PPStructureParser()
     try:
