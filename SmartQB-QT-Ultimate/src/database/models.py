@@ -154,8 +154,6 @@ def init_lancedb(uri: str = "./lancedb_store"):
     return db
 
 
-
-
 @warnings.deprecated(
     "Use init_lancedb() instead. Legacy version lacks FTS5 SQLite bindings."
 )
