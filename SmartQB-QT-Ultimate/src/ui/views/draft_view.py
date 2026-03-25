@@ -1,3 +1,4 @@
+import pathlib
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtCore import Qt, QUrl
@@ -48,7 +49,6 @@ class DraftInterface(QWidget):
         self.taskList.addItem(ListWidgetItem("Draft 2 - Physics Test"))
 
     def init_cherry_markdown(self):
-        import pathlib
         # Load internal editor UI directly from local assets ensuring no network drops
         editor_path = pathlib.Path(__file__).resolve().parent.parent.parent / "assets" / "editor" / "index.html"
         self.previewView.load(QUrl.fromLocalFile(str(editor_path)))

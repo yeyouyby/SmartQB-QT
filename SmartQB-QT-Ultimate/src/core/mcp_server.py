@@ -1,11 +1,18 @@
 import uvicorn
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from typing import Any
 import threading
 import logging
 from mcp import Server
 import sys
+import os
+import pathlib
+import re
+from werkzeug.utils import secure_filename
+from src.database.config_manager import ConfigManager
+import anyio
+import mcp.server.stdio
+
 
 app = FastAPI(title="SmartQB MCP Server")
 server = Server("smartqb-mcp")
@@ -40,17 +47,19 @@ async def sqb_get_config_value(key: str) -> str:
     """
     Executes a safe read-only query on the configuration database.
     """
-    from src.database.config_manager import ConfigManager
-    import pathlib
-    import os
+
+
+
     config_path = os.environ.get("SMARTQB_CONFIG_PATH", str(pathlib.Path(__file__).resolve().parent.parent.parent / "config.db"))
     try:
         cm = ConfigManager(str(config_path))
-        # Master key setup is typically required here for decrypted reads,
-        # For MCP tool context, we check if it requires decryption or return raw
-        # (Assuming the app handles MasterKey setup elsewhere, we just retrieve)
-        val = cm.get_value(key)
-        return str(val) if val else "Key not found or not decrypted."
+        # Master key setup is not possible statelessly without a password prompt.
+        # We catch ValueError specifically to handle encrypted key requests gracefully.
+        try:
+            val = cm.get_value(key)
+            return str(val) if val else "Key not found."
+        except ValueError:
+            return "Key is encrypted. Master Key required for decryption."
     except Exception as e:
         return f"Query Error: {str(e)}"
 
@@ -76,8 +85,6 @@ async def sqb_export_paper(bag_id: str, template_name: str) -> str:
     """
     Exports a completed exam bag to Word format using a template.
     """
-    import re
-    from werkzeug.utils import secure_filename
 
     clean_bag_id = secure_filename(bag_id)
     if not clean_bag_id:
@@ -95,8 +102,6 @@ async def sqb_export_paper(bag_id: str, template_name: str) -> str:
 
 if __name__ == "__main__":
     # Run as a standalone script using stdio transport for Claude Desktop integration
-    import anyio
-    import mcp.server.stdio
 
     async def main():
         async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):

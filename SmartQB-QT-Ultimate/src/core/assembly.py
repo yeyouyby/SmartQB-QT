@@ -42,7 +42,8 @@ class ExamAssemblerSA:
             return pool
 
         # Initial random state
-        current_state = random.sample(pool, max_size)
+        actual_size = min(max_size, len(pool))
+        current_state = random.sample(pool, actual_size)
         current_energy = self.energy(current_state)
         best_state = list(current_state)
         best_energy = current_energy

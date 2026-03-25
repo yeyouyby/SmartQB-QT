@@ -1,3 +1,4 @@
+import sys
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
@@ -38,9 +39,8 @@ class MainWindow(MSFluentWindow):
         w, h = desktop.width(), desktop.height()
         self.move(w//2 - self.width()//2, h//2 - self.height()//2)
 
-import sys
 
-def run_app(with_mcp: bool = True) -> int:
+def run_app() -> int:
     app = QApplication.instance()
     if app is None:
         app = QApplication(sys.argv)
@@ -53,4 +53,4 @@ def run_app(with_mcp: bool = True) -> int:
         pass
 
 if __name__ == '__main__':
-    raise SystemExit(run_app(with_mcp=True))
+    raise SystemExit(run_app())

@@ -4,6 +4,11 @@ from PySide6.QtCore import QThread, Signal
 from typing import Dict, Any, List
 from .parser import PPStructureParser
 import logging
+import json
+import uuid
+import os
+import tempfile
+
 
 class OCRWorker(QThread):
     """
@@ -21,10 +26,6 @@ class OCRWorker(QThread):
     @staticmethod
     def _run_ocr_process(file_path: str, result_queue: mp.Queue):
         """ Runs in an isolated multiprocessing process to prevent GIL blocking. """
-        import json
-        import uuid
-        import os
-        import tempfile
         try:
             parser = PPStructureParser()
             result = parser.parse(file_path)
@@ -60,13 +61,13 @@ class OCRWorker(QThread):
             self.progress.emit(100)
 
             try:
-                import json
                 result = result_queue.get(timeout=30)
                 if result["status"] == "success":
                     data_file = result["data_file"]
                     with open(data_file, "r", encoding="utf-8") as df:
                         parsed_data = json.load(df)
                     self.finished.emit(parsed_data)
+                    os.remove(data_file)
                 else:
                     self.error.emit(result["message"])
 

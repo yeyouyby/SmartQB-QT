@@ -1,3 +1,5 @@
+import logging
+import jieba
 from typing import List, Dict, Any
 import lancedb
 import sqlite3
@@ -17,7 +19,6 @@ class HybridSearchEngine:
         self._embedder = self._placeholder_embedder
 
     def _placeholder_embedder(self, query: str):
-        import logging
         logging.warning("Using placeholder embedder; integrate real embedding service before production.")
         return [0.0] * 1536
 
@@ -33,7 +34,6 @@ class HybridSearchEngine:
             with sqlite3.connect(str(self.sqlite_path)) as conn:
                 cursor = conn.cursor()
                 # Robust tokenization via jieba (Handles Chinese/Math boundaries)
-                import jieba
                 tokens = jieba.lcut(query.replace('"', ''))
                 # Filter empties and construct MATCH query
                 clean_tokens = [t.strip() for t in tokens if t.strip()]
@@ -47,8 +47,7 @@ class HybridSearchEngine:
                     ranks[q_id] = i + 1
             return ranks
         except Exception as e:
-            import logging
-            logging.error(f"FTS5 Search failed: {e}")
+                logging.error(f"FTS5 Search failed: {e}")
             return {}
 
     def dense_search(self, query: str, top_k: int = 10) -> Dict[int, int]:

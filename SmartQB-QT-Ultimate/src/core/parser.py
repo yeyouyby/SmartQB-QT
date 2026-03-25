@@ -43,7 +43,7 @@ class PPStructureParser(BaseParser):
                     text_lines = [r.get('text', '') for r in res.get('res', []) if isinstance(r, dict)]
                     markdown_content += " ".join(text_lines) + "\n"
             except AttributeError:
-                continue"
+                continue
 
         # Return format expected by BaseParser
         return [{"markdown_content": markdown_content, "images": {}, "page_num": 1}]

@@ -1,3 +1,4 @@
+import time
 import openai
 from PySide6.QtCore import QThread, Signal
 from src.database.config_manager import ConfigManager
@@ -67,7 +68,7 @@ class AICorrectionWorker(QThread):
 
     def run(self):
         try:
-            brain = self.brain or AIBrain()
+            brain = self.brain or AIBrain(db_path="config.db")
             # If API is missing, simulate for now to avoid crashing testing UI
             if not brain.client:
                 time.sleep(1.5)
