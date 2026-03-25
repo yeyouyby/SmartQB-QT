@@ -1,8 +1,6 @@
 import openai
 from PySide6.QtCore import QThread, Signal
-from typing import Optional
 from src.database.config_manager import ConfigManager
-import json
 
 class AIBrain:
     """

@@ -1,3 +1,4 @@
+import logging
 import os
 from docx import Document
 from jinja2 import Environment, FileSystemLoader

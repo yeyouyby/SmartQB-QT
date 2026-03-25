@@ -1,1 +1,13 @@
+PySide6
+qfluentwidgets
+lancedb
+openai
+fastapi
+uvicorn
+python-docx
+cryptography
+numpy
+rank_bm25
 werkzeug
+paddlepaddle
+paddleocr

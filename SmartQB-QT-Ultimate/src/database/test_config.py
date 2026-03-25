@@ -1,3 +1,4 @@
+import os
 from config_manager import ConfigManager
 
 def test_config():
@@ -8,7 +9,7 @@ def test_config():
     cm.set_value("theme", "dark", encrypt=False)
 
     # Store encrypted setting
-    cm.set_value("openai_api_key", "sk-1234567890abcdef", encrypt=True)
+    cm.set_value("openai_api_key", os.environ.get("TEST_OPENAI_API_KEY", "sk-dummy-test-key"), encrypt=True)
 
     print("Theme:", cm.get_value("theme"))
     print("API Key:", cm.get_value("openai_api_key"))

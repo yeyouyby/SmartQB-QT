@@ -61,7 +61,7 @@ class SnowflakeID:
                    self.sequence
 
 # Create global ID generator
-snowflake = SnowflakeID()
+snowflake = IdGenerator()
 
 
 # ---- LanceDB Data Models (Pydantic based) ----

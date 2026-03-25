@@ -53,7 +53,8 @@ class ExamAssemblerSA:
             # Generate neighbor state by swapping one random question
             new_state = list(current_state)
             idx_to_remove = random.randint(0, len(new_state) - 1)
-            candidates = [q for q in pool if q not in new_state]
+            new_state_ids = {q.get('id', id(q)) for q in new_state}
+            candidates = [q for q in pool if q.get('id', id(q)) not in new_state_ids]
             if candidates:
                 new_q = random.choice(candidates)
             else:

@@ -1,5 +1,4 @@
 import sqlite3
-import json
 import base64
 import os
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -30,8 +29,28 @@ class ConfigManager:
             ''')
             conn.commit()
 
-    def set_master_key(self, master_password: str, salt: bytes = b'SmartQB_Salt_2024'):
-        """Derives a strong AES-256-GCM key from the user's master password."""
+    def set_master_key(self, master_password: str) -> None:
+        """Derives a strong AES-256-GCM key from the user's master password with persistent random salt."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT value FROM settings WHERE key = ? AND is_encrypted = 0",
+                ("kdf_salt",),
+            )
+            row = cursor.fetchone()
+            if row:
+                salt = base64.b64decode(row[0])
+            else:
+                salt = os.urandom(16)
+                cursor.execute(
+                    """
+                    INSERT OR REPLACE INTO settings (key, value, is_encrypted)
+                    VALUES (?, ?, 0)
+                    """,
+                    ("kdf_salt", base64.b64encode(salt).decode("utf-8")),
+                )
+                conn.commit()
+
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,

@@ -20,7 +20,7 @@ _hybrid_engine = None
 def get_engine():
     global _hybrid_engine
     if _hybrid_engine is None:
-        _hybrid_engine = get_engine()
+        _hybrid_engine = HybridSearchEngine()
     return _hybrid_engine
 
 @server.tool()
@@ -40,15 +40,16 @@ async def sqb_get_config_value(key: str) -> str:
     """
     Executes a safe read-only query on the configuration database.
     """
-    import sqlite3
+    from src.database.config_manager import ConfigManager
     import pathlib
     config_path = pathlib.Path(__file__).resolve().parent.parent.parent / "config.db"
     try:
-        with sqlite3.connect(str(config_path)) as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT value FROM settings WHERE key=?", (key,))
-            results = cursor.fetchone()
-            return str(results)
+        cm = ConfigManager(str(config_path))
+        # Master key setup is typically required here for decrypted reads,
+        # For MCP tool context, we check if it requires decryption or return raw
+        # (Assuming the app handles MasterKey setup elsewhere, we just retrieve)
+        val = cm.get_value(key)
+        return str(val) if val else "Key not found or not decrypted."
     except Exception as e:
         return f"Query Error: {str(e)}"
 
@@ -60,7 +61,10 @@ async def sqb_generate_exam_sa(target_score: int, target_difficulty: float, tags
     try:
         assembler = ExamAssemblerSA(target_score, target_difficulty, {"tags": tags})
         engine = get_engine()
-        pool = engine._get_table().search().limit(200).to_list()
+        table = engine._get_table()
+        if not table:
+            return "Generation Error: Question table is empty or does not exist."
+        pool = table.search().limit(200).to_list()
         paper = assembler.assemble(pool, max_size=20)
         return f"Generated Exam Paper with {len(paper)} questions."
     except Exception as e:
