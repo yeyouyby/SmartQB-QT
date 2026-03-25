@@ -60,16 +60,16 @@ class AICorrectionWorker(QThread):
     result_ready = Signal(str)
     error = Signal(str)
 
-    def __init__(self, raw_text: str):
+    def __init__(self, raw_text: str, brain: AIBrain = None):
         super().__init__()
         self.raw_text = raw_text
+        self.brain = brain
 
     def run(self):
         try:
-            brain = AIBrain()
+            brain = self.brain or AIBrain()
             # If API is missing, simulate for now to avoid crashing testing UI
             if not brain.client:
-                import time
                 time.sleep(1.5)
                 corrected = f"✅ [Simulated Corrected via AI]\n\n{self.raw_text}\n\n$$E = mc^2$$"
             else:

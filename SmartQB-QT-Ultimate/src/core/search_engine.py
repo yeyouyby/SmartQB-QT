@@ -22,7 +22,7 @@ class HybridSearchEngine:
         return [0.0] * 1536
 
     def _get_table(self):
-        if "questions" not in self.db.list_tables():
+        if "questions" not in self.db.table_names():
             return None
         return self.db.open_table("questions")
 
@@ -32,8 +32,12 @@ class HybridSearchEngine:
             ranks = {}
             with sqlite3.connect(str(self.sqlite_path)) as conn:
                 cursor = conn.cursor()
-                # Normalize query to SQLite FTS5 Match syntax
-                match_query = ' OR '.join([f'"{q}"' for q in query.replace('"', '').split()])
+                # Robust tokenization via jieba (Handles Chinese/Math boundaries)
+                import jieba
+                tokens = jieba.lcut(query.replace('"', ''))
+                # Filter empties and construct MATCH query
+                clean_tokens = [t.strip() for t in tokens if t.strip()]
+                match_query = ' OR '.join([f'"{q}"' for q in clean_tokens])
                 cursor.execute(
                     "SELECT question_id, rank FROM questions_fts WHERE questions_fts MATCH ? ORDER BY rank LIMIT ?",
                     (match_query, top_k)

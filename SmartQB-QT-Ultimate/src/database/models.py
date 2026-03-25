@@ -106,15 +106,15 @@ def init_lancedb(uri: str = "./lancedb_store"):
     db = lancedb.connect(uri)
 
     # Create LanceDB tables
-    if "questions" not in db.list_tables():
+    if "questions" not in db.table_names():
         db.create_table("questions", schema=Question)
-    if "drafts" not in db.list_tables():
+    if "drafts" not in db.table_names():
         db.create_table("drafts", schema=Draft)
-    if "exambags" not in db.list_tables():
+    if "exambags" not in db.table_names():
         db.create_table("exambags", schema=ExamBag)
-    if "examgroups" not in db.list_tables():
+    if "examgroups" not in db.table_names():
         db.create_table("examgroups", schema=ExamGroup)
-    if "questionmaps" not in db.list_tables():
+    if "questionmaps" not in db.table_names():
         db.create_table("questionmaps", schema=QuestionMap)
 
     # Initialize SQLite FTS5 for hybrid search BM25 persistence
@@ -137,15 +137,15 @@ def __deprecated_init_lancedb(uri: str = "./lancedb_store"):
     db = lancedb.connect(uri)
 
     # Create tables
-    if "questions" not in db.list_tables():
+    if "questions" not in db.table_names():
         db.create_table("questions", schema=Question)
-    if "drafts" not in db.list_tables():
+    if "drafts" not in db.table_names():
         db.create_table("drafts", schema=Draft)
-    if "exambags" not in db.list_tables():
+    if "exambags" not in db.table_names():
         db.create_table("exambags", schema=ExamBag)
-    if "examgroups" not in db.list_tables():
+    if "examgroups" not in db.table_names():
         db.create_table("examgroups", schema=ExamGroup)
-    if "questionmaps" not in db.list_tables():
+    if "questionmaps" not in db.table_names():
         db.create_table("questionmaps", schema=QuestionMap)
 
     return db

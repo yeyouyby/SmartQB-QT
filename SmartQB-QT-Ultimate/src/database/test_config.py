@@ -1,5 +1,5 @@
 import os
-from config_manager import ConfigManager
+from .config_manager import ConfigManager
 
 def test_config():
     cm = ConfigManager("test_config.db")

@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt, QUrl
 from qfluentwidgets import (TextEdit, ToolButton, PrimaryPushButton,
                             ListWidget, ListWidgetItem, Flyout, FlyoutView, InfoBar)
 import os
-from src.core.ai_brain import AICorrectionWorker
+from src.core.ai_brain import AICorrectionWorker, AIBrain
 
 class DraftInterface(QWidget):
     def __init__(self, parent=None):
@@ -58,7 +58,8 @@ class DraftInterface(QWidget):
         self.aiCorrectBtn.setText("纠错中... (Correcting...)")
 
         raw_text = self.mdEditor.toPlainText()
-        self.worker = AICorrectionWorker(raw_text)
+        brain_instance = getattr(self.window(), 'ai_brain', None) # Or instantiate if missing
+        self.worker = AICorrectionWorker(raw_text, brain=brain_instance)
         self.worker.result_ready.connect(self.on_ai_success)
         self.worker.error.connect(self.on_ai_error)
         self.worker.start()

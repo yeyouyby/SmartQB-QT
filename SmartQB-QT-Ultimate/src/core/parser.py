@@ -37,8 +37,13 @@ class PPStructureParser(BaseParser):
         # Simple extraction loop
         markdown_content = ""
         for res in result:
-            if isinstance(res, dict) and res.get('type') == 'text' and isinstance(res.get('res'), list) and len(res['res']) > 0 and 'text' in res['res'][0]:
-                markdown_content += res['res'][0]['text'] + "\n"
+            try:
+                if res.get('type') == 'text':
+                    # Safe extraction helper logic
+                    text_lines = [r.get('text', '') for r in res.get('res', []) if isinstance(r, dict)]
+                    markdown_content += " ".join(text_lines) + "\n"
+            except AttributeError:
+                continue"
 
         # Return format expected by BaseParser
         return [{"markdown_content": markdown_content, "images": {}, "page_num": 1}]

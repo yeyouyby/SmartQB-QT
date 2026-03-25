@@ -42,7 +42,8 @@ async def sqb_get_config_value(key: str) -> str:
     """
     from src.database.config_manager import ConfigManager
     import pathlib
-    config_path = pathlib.Path(__file__).resolve().parent.parent.parent / "config.db"
+    import os
+    config_path = os.environ.get("SMARTQB_CONFIG_PATH", str(pathlib.Path(__file__).resolve().parent.parent.parent / "config.db"))
     try:
         cm = ConfigManager(str(config_path))
         # Master key setup is typically required here for decrypted reads,
