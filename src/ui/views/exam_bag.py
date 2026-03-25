@@ -47,7 +47,7 @@ class ExamBagInterface(QWidget):
             cardLayout = QVBoxLayout(card)
             cardLayout.addWidget(
                 BodyLabel(
-                    f"Mock Question #{100+i}\nTopic: Mechanics\nTags: #Force #Acceleration",
+                    f"Mock Question #{100 + i}\nTopic: Mechanics\nTags: #Force #Acceleration",
                     card,
                 )
             )

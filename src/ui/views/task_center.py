@@ -38,7 +38,7 @@ class TaskCenterInterface(QWidget):
     def simulate_upload(self):
         row = self.taskTable.rowCount()
         self.taskTable.insertRow(row)
-        self.taskTable.setItem(row, 0, QTableWidgetItem(f"Task-{row+1000}"))
+        self.taskTable.setItem(row, 0, QTableWidgetItem(f"Task-{row + 1000}"))
         self.taskTable.setItem(row, 1, QTableWidgetItem(f"sample_test_{row}.png"))
         self.taskTable.setItem(row, 2, QTableWidgetItem("Processing..."))
 
