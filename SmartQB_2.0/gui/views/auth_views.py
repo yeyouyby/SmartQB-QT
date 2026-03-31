@@ -25,7 +25,9 @@ class AuthBaseWindow(FluentWindow):
 
         self.layout.addWidget(self.title_label)
         self.layout.addSpacing(30)
-        self.layout.addWidget(self.action_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(
+            self.action_button, alignment=Qt.AlignmentFlag.AlignCenter
+        )
 
         self.central_widget.setObjectName(object_name)
         self.addSubInterface(self.central_widget, None, title)
