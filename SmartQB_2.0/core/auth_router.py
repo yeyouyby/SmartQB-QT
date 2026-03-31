@@ -1,3 +1,4 @@
+from PySide6.QtCore import QStandardPaths
 import sys
 from pathlib import Path
 
@@ -16,8 +17,11 @@ class BootRouter:
         Works for both script execution and PyInstaller packaged exe.
         """
         if hasattr(sys, "_MEIPASS"):
-            # Running as bundled executable, use executable directory for persistent DB
-            base_dir = Path(sys.executable).parent
+            # Running as bundled executable, use standard user data directory for persistent DB to avoid permission errors
+            app_data_path = QStandardPaths.writableLocation(
+                QStandardPaths.StandardLocation.AppDataLocation
+            )
+            base_dir = Path(app_data_path)
         else:
             # Running as script
             # Go up three levels from core/auth_router.py to reach project root (where SmartQB_Data is)

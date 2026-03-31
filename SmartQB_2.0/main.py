@@ -1,15 +1,23 @@
+import logging
 import sys
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 
 def main():
+    # Configure basic logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
     # Enable High DPI scaling
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
     )
 
     app = QApplication(sys.argv)
+    app.setApplicationName("SmartQB")
+    app.setOrganizationName("SmartQB")
 
     # Must import PySide6-Fluent-Widgets AFTER QApplication creation
     from qfluentwidgets import setTheme, Theme, setThemeColor
@@ -23,7 +31,7 @@ def main():
     router = BootRouter()
     router.boot()
 
-    print("Main app booted successfully and instantiated the router.")
+    logging.info("Main app booted successfully and instantiated the router.")
 
     sys.exit(app.exec())
 
