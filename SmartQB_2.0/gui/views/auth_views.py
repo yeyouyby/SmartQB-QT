@@ -14,8 +14,8 @@ class AuthBaseWindow(FluentWindow):
         self.resize(800, 600)
 
         self.central_widget = QWidget(self)
-        self.layout = QVBoxLayout(self.central_widget)
-        self.layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.main_layout = QVBoxLayout(self.central_widget)
+        self.main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.title_label = TitleLabel(title, self.central_widget)
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -23,9 +23,9 @@ class AuthBaseWindow(FluentWindow):
         self.action_button = PrimaryPushButton("", self.central_widget)
         self.action_button.setFixedWidth(200)
 
-        self.layout.addWidget(self.title_label)
-        self.layout.addSpacing(30)
-        self.layout.addWidget(
+        self.main_layout.addWidget(self.title_label)
+        self.main_layout.addSpacing(30)
+        self.main_layout.addWidget(
             self.action_button, alignment=Qt.AlignmentFlag.AlignCenter
         )
 

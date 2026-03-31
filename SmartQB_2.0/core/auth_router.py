@@ -16,12 +16,12 @@ class BootRouter:
         Works for both script execution and PyInstaller packaged exe.
         """
         if hasattr(sys, "_MEIPASS"):
-            # Running as bundled executable
-            base_dir = Path(getattr(sys, "_MEIPASS"))
+            # Running as bundled executable, use executable directory for persistent DB
+            base_dir = Path(sys.executable).parent
         else:
             # Running as script
-            # Go up two levels from core/auth_router.py to reach SmartQB_2.0/
-            base_dir = Path(__file__).resolve().parent.parent
+            # Go up three levels from core/auth_router.py to reach project root (where SmartQB_Data is)
+            base_dir = Path(__file__).resolve().parent.parent.parent
 
         return base_dir
 
