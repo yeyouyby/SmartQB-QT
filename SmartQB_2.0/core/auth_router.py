@@ -1,11 +1,12 @@
 import sys
-import os
 from pathlib import Path
+
 
 class BootRouter:
     """
     State Machine router that determines the initial boot sequence.
     """
+
     def __init__(self):
         self.current_window = None
 
@@ -14,9 +15,9 @@ class BootRouter:
         Helper function to reliably get the project root path.
         Works for both script execution and PyInstaller packaged exe.
         """
-        if hasattr(sys, '_MEIPASS'):
+        if hasattr(sys, "_MEIPASS"):
             # Running as bundled executable
-            base_dir = Path(sys.executable).parent
+            base_dir = Path(getattr(sys, "_MEIPASS"))
         else:
             # Running as script
             # Go up two levels from core/auth_router.py to reach SmartQB_2.0/
