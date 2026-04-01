@@ -31,7 +31,16 @@ def main():
     # Initialize the router to determine which window to show
     script_root = Path(__file__).resolve().parent.parent
     router = BootRouter(script_root)
-    router.boot()
+    try:
+        router.boot()
+    except Exception as e:
+        logging.error(f"Main app failed to boot: {e}")
+        from PySide6.QtWidgets import QMessageBox
+
+        QMessageBox.critical(
+            None, "Startup Error", f"Could not initialize application:\n{e}"
+        )
+        sys.exit(1)
 
     logging.info("Main app booted successfully and instantiated the router.")
 

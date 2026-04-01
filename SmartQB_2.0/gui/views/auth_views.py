@@ -1,9 +1,9 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QVBoxLayout, QWidget
-from qfluentwidgets import FluentWindow, TitleLabel, PrimaryPushButton
+from qfluentwidgets import MSFluentWindow, TitleLabel, PrimaryPushButton
 
 
-class AuthBaseWindow(FluentWindow):
+class AuthBaseWindow(MSFluentWindow):
     """
     Common base class for authentication/setup windows to share boilerplate.
     """
@@ -15,7 +15,10 @@ class AuthBaseWindow(FluentWindow):
         self.setWindowTitle(window_title if window_title is not None else title)
         self.resize(800, 600)
 
+        # Create central container
         self.central_widget = QWidget(self)
+        self.central_widget.setObjectName(object_name)
+
         self.main_layout = QVBoxLayout(self.central_widget)
         self.main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -31,9 +34,8 @@ class AuthBaseWindow(FluentWindow):
             self.action_button, alignment=Qt.AlignmentFlag.AlignCenter
         )
 
-        self.central_widget.setObjectName(object_name)
+        # MSFluentWindow uses addSubInterface for its main view without the left nav
         self.addSubInterface(self.central_widget, None, title)
-        self.navigationInterface.hide()
 
 
 class OOBE_WizardWindow(AuthBaseWindow):
