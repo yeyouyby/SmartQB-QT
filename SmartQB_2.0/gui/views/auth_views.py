@@ -49,6 +49,7 @@ class AuthBaseWindow(FramelessWindow):
 
         # Add Fluent title bar to make the frameless window draggable
         self.titleBar = TitleBar(self)
+        self.setTitleBar(self.titleBar)
         self.window_layout.addWidget(self.titleBar)
 
         self.window_layout.addWidget(self.central_widget)
