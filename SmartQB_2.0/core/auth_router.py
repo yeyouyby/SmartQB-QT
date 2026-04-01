@@ -46,12 +46,7 @@ class BootRouter:
 
         base_path, is_bundled = self.get_base_path()
 
-        db_dir = base_path / "SmartQB_Data"
-        try:
-            db_dir.mkdir(parents=True, exist_ok=True)
-        except OSError as e:
-            raise RuntimeError(f"Failed to create database directory: {e}")
-        db_path = db_dir / "sys_master.db"
+        db_path = base_path / "SmartQB_Data" / "sys_master.db"
 
         # Check if master database exists
         if db_path.exists():

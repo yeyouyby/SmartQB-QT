@@ -1,10 +1,11 @@
 from typing import Optional
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QVBoxLayout, QWidget
-from qfluentwidgets import MSFluentWindow, TitleLabel, PrimaryPushButton
+from qfluentwidgets import TitleLabel, PrimaryPushButton
+from qframelesswindow import FramelessWindow
 
 
-class AuthBaseWindow(MSFluentWindow):
+class AuthBaseWindow(FramelessWindow):
     """
     Common base class for authentication/setup windows to share boilerplate.
     """
@@ -38,10 +39,10 @@ class AuthBaseWindow(MSFluentWindow):
         self.main_layout.addWidget(
             self.action_button, alignment=Qt.AlignmentFlag.AlignCenter
         )
-
-        # MSFluentWindow uses addSubInterface for its main view; hide the navigation interface for a clean auth window
-        self.addSubInterface(self.central_widget, None, title)
-        self.navigationInterface.hide()
+        # Set up FramelessWindow layout
+        self.window_layout = QVBoxLayout(self)
+        # Assuming we have a title bar, we need to make sure layout accounts for it or we just add our widget.
+        self.window_layout.addWidget(self.central_widget)
 
 
 class OOBE_WizardWindow(AuthBaseWindow):
