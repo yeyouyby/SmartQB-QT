@@ -49,7 +49,7 @@ class BootRouter:
         db_path = base_path / "SmartQB_Data" / "sys_master.db"
 
         # Check if master database exists
-        if db_path.exists():
+        if db_path.is_file():
             # DB exists, show Login
             self.current_window = LoginWindow(db_path=db_path)
         else:
