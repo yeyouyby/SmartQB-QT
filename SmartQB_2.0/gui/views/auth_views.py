@@ -34,8 +34,9 @@ class AuthBaseWindow(MSFluentWindow):
             self.action_button, alignment=Qt.AlignmentFlag.AlignCenter
         )
 
-        # MSFluentWindow uses addSubInterface for its main view without the left nav
+        # MSFluentWindow uses addSubInterface for its main view; hide the navigation interface for a clean auth window
         self.addSubInterface(self.central_widget, None, title)
+        self.navigationInterface.hide()
 
 
 class OOBE_WizardWindow(AuthBaseWindow):
