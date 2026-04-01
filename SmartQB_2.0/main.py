@@ -7,17 +7,8 @@ from PySide6.QtWidgets import QApplication
 
 def get_script_root() -> Path:
     """
-    Finds the true project root by looking for a marker file (.gitignore).
-    Falls back to the parent of the SmartQB_2.0 directory if not found.
+    Returns the project root directory.
     """
-    current_dir = Path(__file__).resolve().parent
-    # Traverse up to 3 levels looking for the marker
-    for _ in range(3):
-        if (current_dir / ".gitignore").exists():
-            return current_dir
-        current_dir = current_dir.parent
-
-    # Fallback to default scaffold logic if marker isn't found
     return Path(__file__).resolve().parent.parent
 
 
