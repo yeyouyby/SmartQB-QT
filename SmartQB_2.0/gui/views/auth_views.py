@@ -8,9 +8,11 @@ class AuthBaseWindow(FluentWindow):
     Common base class for authentication/setup windows to share boilerplate.
     """
 
-    def __init__(self, title: str, object_name: str, parent=None):
+    def __init__(
+        self, title: str, object_name: str, parent=None, window_title: str | None = None
+    ):
         super().__init__(parent)
-        self.setWindowTitle(title)
+        self.setWindowTitle(window_title if window_title is not None else title)
         self.resize(800, 600)
 
         self.central_widget = QWidget(self)
@@ -44,8 +46,8 @@ class OOBE_WizardWindow(AuthBaseWindow):
             title="Welcome to SmartQB - Initial Setup",
             object_name="SetupWidget",
             parent=parent,
+            window_title="SmartQB - Initialization",
         )
-        self.setWindowTitle("SmartQB - Initialization")
         self.action_button.setText("Start Configuration")
 
 
@@ -55,6 +57,10 @@ class LoginWindow(AuthBaseWindow):
     """
 
     def __init__(self, parent=None):
-        super().__init__(title="System Login", object_name="LoginWidget", parent=parent)
-        self.setWindowTitle("SmartQB - Login")
+        super().__init__(
+            title="System Login",
+            object_name="LoginWidget",
+            parent=parent,
+            window_title="SmartQB - Login",
+        )
         self.action_button.setText("Login")

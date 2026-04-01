@@ -8,8 +8,9 @@ class BootRouter:
     State Machine router that determines the initial boot sequence.
     """
 
-    def __init__(self):
+    def __init__(self, script_root: Path):
         self.current_window = None
+        self.script_root = script_root
 
     def get_base_path(self) -> Path:
         """
@@ -18,14 +19,17 @@ class BootRouter:
         """
         if hasattr(sys, "_MEIPASS"):
             # Running as bundled executable, use standard user data directory for persistent DB to avoid permission errors
-            app_data_path = QStandardPaths.writableLocation(
+            app_data_path_str = QStandardPaths.writableLocation(
                 QStandardPaths.StandardLocation.AppDataLocation
             )
-            base_dir = Path(app_data_path)
+            if not app_data_path_str:
+                raise RuntimeError(
+                    "Could not determine writable application data location."
+                )
+            base_dir = Path(app_data_path_str)
         else:
             # Running as script
-            # Go up three levels from core/auth_router.py to reach project root (where SmartQB_Data is)
-            base_dir = Path(__file__).resolve().parent.parent.parent
+            base_dir = self.script_root
 
         return base_dir
 
@@ -37,7 +41,9 @@ class BootRouter:
         from gui.views.auth_views import OOBE_WizardWindow, LoginWindow
 
         base_path = self.get_base_path()
-        db_path = base_path / "SmartQB_Data" / "sys_master.db"
+        db_dir = base_path / "SmartQB_Data"
+        db_dir.mkdir(parents=True, exist_ok=True)
+        db_path = db_dir / "sys_master.db"
 
         # Check if master database exists
         if db_path.exists():

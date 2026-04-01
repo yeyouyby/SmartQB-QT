@@ -2,3 +2,22 @@ __pycache__/
 *.py[cod]
 *$py.class
 SmartQB_Data/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# IDEs
+.vscode/
+.idea/
+
+# PyInstaller / Build Artifacts
+build/
+dist/
+*.spec
+
+# Testing Artifacts
+.pytest_cache/
+.coverage
+htmlcov/

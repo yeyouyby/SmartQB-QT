@@ -1,3 +1,4 @@
+from pathlib import Path
 import logging
 import sys
 from PySide6.QtCore import Qt
@@ -25,10 +26,11 @@ def main():
 
     # Configure global fluent theme (Win 11 style)
     setTheme(Theme.AUTO)
-    setThemeColor("#005fb8")  # SmartQB default primary color
+    setThemeColor("#005fb8")  # TODO: Move to a constants/config file
 
     # Initialize the router to determine which window to show
-    router = BootRouter()
+    script_root = Path(__file__).resolve().parent.parent
+    router = BootRouter(script_root)
     router.boot()
 
     logging.info("Main app booted successfully and instantiated the router.")
