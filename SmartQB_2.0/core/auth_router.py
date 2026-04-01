@@ -1,4 +1,3 @@
-from typing import Tuple
 from PySide6.QtCore import QStandardPaths
 import sys
 from pathlib import Path
@@ -13,11 +12,10 @@ class BootRouter:
         self.current_window = None
         self.script_root = script_root
 
-    def get_base_path(self) -> Tuple[Path, bool]:
+    def get_base_path(self) -> Path:
         """
-        Helper function to reliably get the project root path.
+        Helper function to reliably get the application data root path.
         Works for both script execution and PyInstaller packaged exe.
-        Returns a tuple of (path, is_bundled).
         """
         if hasattr(sys, "_MEIPASS"):
             # Running as bundled executable
@@ -28,14 +26,10 @@ class BootRouter:
                 raise RuntimeError(
                     "Could not determine writable application data location."
                 )
-            base_dir = Path(app_data_path_str)
-            is_bundled = True
-        else:
-            # Running as script
-            base_dir = self.script_root
-            is_bundled = False
+            return Path(app_data_path_str)
 
-        return base_dir, is_bundled
+        # Running as script: use local data folder
+        return self.script_root / "SmartQB_Data"
 
     def boot(self):
         """
@@ -44,9 +38,9 @@ class BootRouter:
         # Delay import until QApplication exists
         from gui.views.auth_views import OOBE_WizardWindow, LoginWindow
 
-        base_path, _ = self.get_base_path()
+        base_path = self.get_base_path()
 
-        db_path = base_path / "SmartQB_Data" / "sys_master.db"
+        db_path = base_path / "sys_master.db"
         db_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Check if master database exists
