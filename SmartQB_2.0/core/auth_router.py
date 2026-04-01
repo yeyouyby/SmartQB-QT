@@ -1,3 +1,4 @@
+from typing import Tuple
 from PySide6.QtCore import QStandardPaths
 import sys
 from pathlib import Path
@@ -12,7 +13,7 @@ class BootRouter:
         self.current_window = None
         self.script_root = script_root
 
-    def get_base_path(self) -> tuple[Path, bool]:
+    def get_base_path(self) -> Tuple[Path, bool]:
         """
         Helper function to reliably get the project root path.
         Works for both script execution and PyInstaller packaged exe.

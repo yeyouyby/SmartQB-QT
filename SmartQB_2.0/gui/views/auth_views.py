@@ -1,3 +1,4 @@
+from typing import Optional
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 from qfluentwidgets import MSFluentWindow, TitleLabel, PrimaryPushButton
@@ -9,7 +10,11 @@ class AuthBaseWindow(MSFluentWindow):
     """
 
     def __init__(
-        self, title: str, object_name: str, parent=None, window_title: str | None = None
+        self,
+        title: str,
+        object_name: str,
+        parent=None,
+        window_title: Optional[str] = None,
     ):
         super().__init__(parent)
         self.setWindowTitle(window_title if window_title is not None else title)
