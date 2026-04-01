@@ -46,9 +46,7 @@ class BootRouter:
 
         base_path, is_bundled = self.get_base_path()
 
-        # If bundled, AppDataLocation already includes the app name, so avoid redundant nesting.
-        # If running as a script, use the SmartQB_Data folder at the project root.
-        db_dir = base_path / "data" if is_bundled else base_path / "SmartQB_Data"
+        db_dir = base_path / "SmartQB_Data"
         try:
             db_dir.mkdir(parents=True, exist_ok=True)
         except OSError as e:
