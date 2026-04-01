@@ -44,9 +44,10 @@ class BootRouter:
         # Delay import until QApplication exists
         from gui.views.auth_views import OOBE_WizardWindow, LoginWindow
 
-        base_path, is_bundled = self.get_base_path()
+        base_path, _ = self.get_base_path()
 
         db_path = base_path / "SmartQB_Data" / "sys_master.db"
+        db_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Check if master database exists
         if db_path.is_file():
