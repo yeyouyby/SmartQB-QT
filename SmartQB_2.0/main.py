@@ -2,7 +2,7 @@ from pathlib import Path
 import logging
 import sys
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 
 def get_script_root() -> Path:
@@ -30,10 +30,11 @@ def main():
     # Must import PySide6-Fluent-Widgets AFTER QApplication creation
     from qfluentwidgets import setTheme, Theme, setThemeColor
     from core.auth_router import BootRouter
+    from resources.config.constants import THEME_COLOR_PRIMARY
 
     # Configure global fluent theme (Win 11 style)
     setTheme(Theme.AUTO)
-    setThemeColor("#005fb8")  # TODO: Move to a constants/config file
+    setThemeColor(THEME_COLOR_PRIMARY)
 
     # Initialize the router to determine which window to show
     script_root = get_script_root()
@@ -41,9 +42,7 @@ def main():
     try:
         router.boot()
     except Exception as e:
-        logging.error(f"Main app failed to boot: {e}")
-        from PySide6.QtWidgets import QMessageBox
-
+        logging.exception("Main app failed to boot")
         QMessageBox.critical(
             None, "Startup Error", f"Could not initialize application:\n{e}"
         )
