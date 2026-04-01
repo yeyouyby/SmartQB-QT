@@ -51,9 +51,9 @@ class BootRouter:
         # Check if master database exists
         if db_path.exists():
             # DB exists, show Login
-            self.current_window = LoginWindow()
+            self.current_window = LoginWindow(db_path=db_path)
         else:
             # DB does not exist, show Out-of-Box Experience (OOBE) setup
-            self.current_window = OOBE_WizardWindow()
+            self.current_window = OOBE_WizardWindow(db_path=db_path)
 
         self.current_window.show()

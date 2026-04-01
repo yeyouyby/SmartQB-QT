@@ -1,7 +1,8 @@
 from typing import Optional
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QVBoxLayout, QWidget
-from qfluentwidgets import TitleLabel, PrimaryPushButton
+from qfluentwidgets import TitleLabel, PrimaryPushButton, TitleBar
+from pathlib import Path
 from qframelesswindow import FramelessWindow
 
 
@@ -14,10 +15,12 @@ class AuthBaseWindow(FramelessWindow):
         self,
         title: str,
         object_name: str,
+        db_path: Path,
         parent=None,
         window_title: Optional[str] = None,
     ):
         super().__init__(parent)
+        self.db_path = db_path
         self.setWindowTitle(window_title if window_title is not None else title)
         self.resize(800, 600)
 
@@ -41,7 +44,13 @@ class AuthBaseWindow(FramelessWindow):
         )
         # Set up FramelessWindow layout
         self.window_layout = QVBoxLayout(self)
-        # Assuming we have a title bar, we need to make sure layout accounts for it or we just add our widget.
+        self.window_layout.setContentsMargins(0, 0, 0, 0)
+        self.window_layout.setSpacing(0)
+
+        # Add Fluent title bar to make the frameless window draggable
+        self.titleBar = TitleBar(self)
+        self.window_layout.addWidget(self.titleBar)
+
         self.window_layout.addWidget(self.central_widget)
 
 
@@ -50,10 +59,11 @@ class OOBE_WizardWindow(AuthBaseWindow):
     Placeholder Out-Of-Box Experience (OOBE) window for initial setup.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, db_path: Path, parent=None):
         super().__init__(
             title="Welcome to SmartQB - Initial Setup",
             object_name="SetupWidget",
+            db_path=db_path,
             parent=parent,
             window_title="SmartQB - Initialization",
         )
@@ -65,10 +75,11 @@ class LoginWindow(AuthBaseWindow):
     Placeholder Login window.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, db_path: Path, parent=None):
         super().__init__(
             title="System Login",
             object_name="LoginWidget",
+            db_path=db_path,
             parent=parent,
             window_title="SmartQB - Login",
         )
