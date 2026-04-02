@@ -2,6 +2,9 @@ from PySide6.QtCore import QStandardPaths
 import sys
 from pathlib import Path
 
+from gui.views.auth_views import OOBEWizardWindow, LoginWindow
+from resources.config.constants import DATA_FOLDER_NAME, DB_NAME
+
 
 class BootRouter:
     """
@@ -29,18 +32,16 @@ class BootRouter:
             return Path(app_data_path_str)
 
         # Running as script: use local data folder
-        return self.script_root / "SmartQB_Data"
+        return self.script_root / DATA_FOLDER_NAME
 
     def boot(self):
         """
         Evaluates conditions and boots the appropriate window.
         """
-        # Delay import until QApplication exists
-        from gui.views.auth_views import OOBE_WizardWindow, LoginWindow
 
         base_path = self.get_base_path()
 
-        db_path = base_path / "sys_master.db"
+        db_path = base_path / DB_NAME
         db_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Check if master database exists
@@ -49,6 +50,6 @@ class BootRouter:
             self.current_window = LoginWindow(db_path=db_path)
         else:
             # DB does not exist, show Out-of-Box Experience (OOBE) setup
-            self.current_window = OOBE_WizardWindow(db_path=db_path)
+            self.current_window = OOBEWizardWindow(db_path=db_path)
 
         self.current_window.show()

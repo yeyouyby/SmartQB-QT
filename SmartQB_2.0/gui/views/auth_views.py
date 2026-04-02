@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QVBoxLayout, QWidget
 from qfluentwidgets import TitleLabel, PrimaryPushButton, TitleBar
 from pathlib import Path
 from qframelesswindow import FramelessWindow
+from resources.config.constants import DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT
 
 
 class AuthBaseWindow(FramelessWindow):
@@ -22,7 +23,7 @@ class AuthBaseWindow(FramelessWindow):
         super().__init__(parent)
         self.db_path = db_path
         self.setWindowTitle(window_title if window_title is not None else title)
-        self.resize(800, 600)
+        self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
 
         # Create central container
         self.central_widget = QWidget(self)
@@ -55,7 +56,7 @@ class AuthBaseWindow(FramelessWindow):
         self.window_layout.addWidget(self.central_widget)
 
 
-class OOBE_WizardWindow(AuthBaseWindow):
+class OOBEWizardWindow(AuthBaseWindow):
     """
     Placeholder Out-Of-Box Experience (OOBE) window for initial setup.
     """
