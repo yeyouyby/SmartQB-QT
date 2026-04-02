@@ -23,9 +23,11 @@ class SQLiteManager:
         self.conn = sqlite.connect(str(self.db_path))
 
         # Pragmas to configure SQLCipher
-        self.conn.execute(f"PRAGMA key = '{key}';")  # sourcery skip: sql-injection
+        # Escape single quotes by doubling them for safe PRAGMA parameterization
+        safe_key = key.replace("'", "''")
+        self.conn.execute(f"PRAGMA key = '{safe_key}';")  # sourcery skip: sql-injection
         self.conn.execute("PRAGMA cipher_page_size = 4096;")
-        self.conn.execute("PRAGMA kdf_iter = 64000;")
+        self.conn.execute("PRAGMA kdf_iter = 600000;")
         self.conn.execute("PRAGMA cipher_hmac_algorithm = HMAC_SHA256;")
         self.conn.execute("PRAGMA cipher_kdf_algorithm = PBKDF2_HMAC_SHA256;")
 

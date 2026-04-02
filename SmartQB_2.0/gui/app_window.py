@@ -90,8 +90,10 @@ class QuestionBlockCard(ElevatedCardWidget):
         """Synchronize Markdown -> HTML DOM without reloading entire page."""
         if self.web_engine_view and self.text_edit:
             # Using runJavaScript to patch HTML inline (assuming template loaded)
-            html_content = self.text_edit.toPlainText().replace("'", "\\'")
-            js_patch = f"document.body.innerHTML = '{html_content}';"
+            import json
+
+            html_json = json.dumps(self.text_edit.toPlainText())
+            js_patch = f"document.body.innerHTML = {html_json};"
             self.web_engine_view.page().runJavaScript(js_patch)
 
 

@@ -25,29 +25,24 @@ class MinerUClient:
         if file_path.suffix.lower() == ".docx":
             await self._convert_docx_to_pdf(file_path)
 
-        # 2. MinerU Submission
-        try:
-            with open(file_path, "rb") as f:
-                response = await self.client.post("/tasks", files={"file": f})
-                response.raise_for_status()
-                task_id = response.json().get("task_id")
+            # 2. MinerU Submission
+        with open(file_path, "rb") as f:
+            response = await self.client.post("/tasks", files={"file": f})
+            response.raise_for_status()
+            task_id = response.json().get("task_id")
 
-            # 3. Long Polling
-            while True:
-                status_res = await self.client.get(f"/tasks/{task_id}")
-                status_res.raise_for_status()
-                status_data = status_res.json()
+        # 3. Long Polling
+        while True:
+            status_res = await self.client.get(f"/tasks/{task_id}")
+            status_res.raise_for_status()
+            status_data = status_res.json()
 
-                if status_data.get("status") == "SUCCESS":
-                    return status_data.get("result", {})
-                elif status_data.get("status") == "FAILED":
-                    raise RuntimeError(
-                        f"MinerU Task Failed: {status_data.get('error')}"
-                    )
+            if status_data.get("status") == "SUCCESS":
+                return status_data.get("result", {})
+            elif status_data.get("status") == "FAILED":
+                raise RuntimeError(f"MinerU Task Failed: {status_data.get('error')}")
 
-                await asyncio.sleep(2)
-        finally:
-            await self.client.aclose()
+            await asyncio.sleep(2)
 
     async def _convert_docx_to_pdf(self, file_path: Path) -> Path:
         """
@@ -60,7 +55,7 @@ class MinerUClient:
 
         try:
             # LibreOffice headless approach for CI/Linux
-            process = await asyncio.create_subprocess_exec(
+            process = await asyncio.create_subprocess_exec(  # nosec B603 B607
                 "soffice",
                 "--headless",
                 "--convert-to",
