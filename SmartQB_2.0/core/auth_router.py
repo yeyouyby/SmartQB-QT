@@ -1,4 +1,4 @@
-from PySide6.QtCore import QStandardPaths
+from PySide6.QtCore import QStandardPaths, QCoreApplication
 import sys
 from pathlib import Path
 
@@ -27,6 +27,11 @@ class BootRouter:
         ).exists()
 
         if is_frozen or not is_dev_env:
+            if QCoreApplication.instance() is None:
+                raise RuntimeError(
+                    "BootRouter requires an active QCoreApplication instance to resolve paths via QStandardPaths."
+                )
+
             # Use standard user data directory for persistent DB to avoid permission errors
             # in non-development or bundled environments
             app_data_path_str = QStandardPaths.writableLocation(
