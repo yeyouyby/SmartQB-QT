@@ -18,10 +18,17 @@ class BootRouter:
     def get_base_path(self) -> Path:
         """
         Helper function to reliably get the application data root path.
-        Works for both script execution and PyInstaller packaged exe.
+        Works for both script execution, PyInstaller packaged exe, and installed packages.
         """
-        if hasattr(sys, "_MEIPASS"):
-            # Running as bundled executable
+        is_frozen = getattr(sys, "frozen", False)
+        # Check if we are running from the development repository
+        is_dev_env = (self.script_root / ".git").exists() or (
+            self.script_root / ".gitignore"
+        ).exists()
+
+        if is_frozen or not is_dev_env:
+            # Use standard user data directory for persistent DB to avoid permission errors
+            # in non-development or bundled environments
             app_data_path_str = QStandardPaths.writableLocation(
                 QStandardPaths.StandardLocation.AppDataLocation
             )
@@ -31,7 +38,7 @@ class BootRouter:
                 )
             return Path(app_data_path_str)
 
-        # Running as script: use local data folder
+        # Running as script in development env: use local data folder
         return self.script_root / DATA_FOLDER_NAME
 
     def boot(self):
