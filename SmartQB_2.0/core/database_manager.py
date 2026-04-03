@@ -16,16 +16,18 @@ class SQLiteManager:
         self.db_path = db_path
         self.conn: Optional[sqlite.Connection] = None
 
-    def connect(self, key: str) -> None:
+    def connect(self, key: bytes) -> None:
         """
         Connects to the database and applies the master key for transparent encryption.
         """
+        if self.conn:
+            self.conn.close()
         self.conn = sqlite.connect(str(self.db_path))
 
         # Pragmas to configure SQLCipher
         # Escape single quotes by doubling them for safe PRAGMA parameterization
-        safe_key = key.replace("'", "''")
-        pragma_stmt = "PRAGMA key = '" + safe_key + "';"
+        hex_key = key.hex()
+        pragma_stmt = "PRAGMA key = \"x'" + hex_key + "'\";"
         self.conn.execute(
             pragma_stmt
         )  # sourcery skip: sqlalchemy-execute-raw-query, sql-injection, avoid-sql-string-concatenation
@@ -68,7 +70,7 @@ class LanceDBManager:
     Manages the multi-modal vector database using LanceDB.
     """
 
-    def __init__(self, db_dir: Path):
+    def __init__(self, db_dir: Path, vector_dim: int = 1024):
         # LanceDB directory is separate from sys_master.db
         self.db_path = db_dir / "knowledge_vectors.lance"
         self.db = lancedb.connect(str(self.db_path))
@@ -78,7 +80,7 @@ class LanceDBManager:
             [
                 pa.field("snowflake_id", pa.int64()),
                 pa.field(
-                    "vector", pa.list_(pa.float32(), 1024)
+                    "vector", pa.list_(pa.float32(), vector_dim)
                 ),  # e.g. BGE-m3 / OpenAI dimension
                 pa.field("content_md", pa.string()),
                 pa.field("logic_chain", pa.string()),

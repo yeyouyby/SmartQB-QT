@@ -57,6 +57,24 @@ class PDFRenderWorker(QRunnable):
             self.signals.render_finished.emit()
 
 
+class WebEnginePool:
+    """
+    Global pool for QWebEngineView to prevent Chromium process creation/destruction overhead.
+    Maintains a single shared instance that is re-parented dynamically.
+    """
+
+    _instance = None
+
+    @classmethod
+    def get_view(cls, parent=None) -> QWebEngineView:
+        if cls._instance is None:
+            cls._instance = QWebEngineView()
+
+        # Reset any previous state if needed
+        cls._instance.setParent(parent)
+        return cls._instance
+
+
 class EventBus(QObject):
     """Global Event Bus for cross-panel communication."""
 
@@ -89,9 +107,9 @@ class QuestionBlockCard(ElevatedCardWidget):
         self.debounce_timer.timeout.connect(self._sync_preview)
 
     def mouseDoubleClickEvent(self, event):
-        """Switch to State 2 (Active Edit) and allocate Chromium Engine."""
+        """Switch to State 2 (Active Edit) and borrow Chromium Engine from the pool."""
         if not self.web_engine_view:
-            self.web_engine_view = QWebEngineView(self)
+            self.web_engine_view = WebEnginePool.get_view(self)
             self.text_edit = TextEdit(self)
 
             # Hide preview label
@@ -108,20 +126,19 @@ class QuestionBlockCard(ElevatedCardWidget):
             self.bus.question_focused.emit(self.block_id)
 
     def focusOutEvent(self, event):
-        """Switch back to State 1 and free Chromium Engine resources."""
+        """Switch back to State 1 and release Chromium Engine resources back to the pool."""
         if self.web_engine_view:
             # Revert UI state
             self.layout.removeWidget(self.web_engine_view)
             self.layout.removeWidget(self.text_edit)
             self.preview_label.show()
 
-            # Delete Heavy Chromium processes safely
-            self.web_engine_view.deleteLater()
-            self.text_edit.deleteLater()
+            # Return Heavy Chromium process to the void (unparent it) rather than destroying it
+            self.web_engine_view.setParent(None)
             self.web_engine_view = None
-            self.text_edit = None
 
-            # Force GC
+            self.text_edit.deleteLater()
+            self.text_edit = None
 
     @Slot()
     def _on_text_changed(self):

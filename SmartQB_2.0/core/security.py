@@ -18,10 +18,20 @@ class KMSManager:
     Implements Hybrid KMS with Argon2, AES-256-GCM, and RSA-2048.
     """
 
+    ARGON2_TIME_COST = 3
+    ARGON2_MEMORY_COST = 65536
+    ARGON2_PARALLELISM = 4
+    ARGON2_HASH_LEN = 32
+    ARGON2_SALT_LEN = 16
+
     def __init__(self):
         # Argon2 configuration matching current security standards
         self.ph = PasswordHasher(
-            time_cost=3, memory_cost=65536, parallelism=4, hash_len=32, salt_len=16
+            time_cost=self.ARGON2_TIME_COST,
+            memory_cost=self.ARGON2_MEMORY_COST,
+            parallelism=self.ARGON2_PARALLELISM,
+            hash_len=self.ARGON2_HASH_LEN,
+            salt_len=self.ARGON2_SALT_LEN,
         )
 
     def derive_master_key(self, password: str, salt: bytes) -> bytes:
@@ -40,10 +50,10 @@ class KMSManager:
         raw_hash = hash_secret_raw(
             secret=password_bytes,
             salt=salt,
-            time_cost=3,
-            memory_cost=65536,
-            parallelism=4,
-            hash_len=32,
+            time_cost=self.ARGON2_TIME_COST,
+            memory_cost=self.ARGON2_MEMORY_COST,
+            parallelism=self.ARGON2_PARALLELISM,
+            hash_len=self.ARGON2_HASH_LEN,
             type=Type.ID,
         )
         return raw_hash
