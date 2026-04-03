@@ -50,7 +50,7 @@ class PDFRenderWorker(QRunnable):
                     pix.height,
                     pix.stride,
                     QImage.Format.Format_RGB888,
-                )
+                ).copy()
                 self.signals.image_rendered.emit(qt_image)
             doc.close()
         finally:
@@ -128,6 +128,12 @@ class QuestionBlockCard(ElevatedCardWidget):
     def focusOutEvent(self, event):
         """Switch back to State 1 and release Chromium Engine resources back to the pool."""
         if self.web_engine_view:
+            # Prevent reverting if focus moved to a child (e.g., the TextEdit)
+            from PySide6.QtWidgets import QApplication
+
+            if self.isAncestorOf(QApplication.focusWidget()):
+                return
+
             # Revert UI state
             self.layout.removeWidget(self.web_engine_view)
             self.layout.removeWidget(self.text_edit)
