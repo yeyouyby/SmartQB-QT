@@ -6,6 +6,7 @@ import json
 from typing import Tuple
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import hashes
+from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import serialization
 from argon2 import PasswordHasher
@@ -91,7 +92,7 @@ class KMSManager:
         try:
             plaintext = aesgcm.decrypt(nonce, ciphertext, None)
             return plaintext
-        except Exception as e:
+        except InvalidTag as e:
             raise ValueError(f"Decryption failed or data tampered: {e}")
 
     def encrypt_rsa(self, data: bytes, public_key_pem: bytes) -> bytes:

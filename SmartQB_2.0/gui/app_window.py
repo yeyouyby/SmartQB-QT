@@ -1,4 +1,12 @@
-from PySide6.QtCore import Qt, QTimer, Signal, Slot, QObject
+from PySide6.QtCore import (
+    Qt,
+    QTimer,
+    Signal,
+    Slot,
+    QObject,
+    QRunnable,
+    QThreadPool,
+)
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QSplitter, QVBoxLayout, QLabel
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtGui import QImage, QPixmap
@@ -10,7 +18,43 @@ from qfluentwidgets import (
 )
 from qfluentwidgets import FluentIcon as FIF
 import fitz  # PyMuPDF
-import gc
+import json
+
+
+class PDFRenderSignals(QObject):
+    image_rendered = Signal(QImage)
+    render_finished = Signal()
+
+
+class PDFRenderWorker(QRunnable):
+    """
+    Background worker to render PyMuPDF pages without blocking the GUI thread.
+    """
+
+    def __init__(self, pdf_path: str):
+        super().__init__()
+        self.pdf_path = pdf_path
+        self.signals = PDFRenderSignals()
+
+    @Slot()
+    def run(self):
+        try:
+            doc = fitz.open(self.pdf_path)
+            for page_num in range(min(2, doc.page_count)):
+                page = doc.load_page(page_num)
+                pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
+
+                qt_image = QImage(
+                    pix.samples,
+                    pix.width,
+                    pix.height,
+                    pix.stride,
+                    QImage.Format.Format_RGB888,
+                )
+                self.signals.image_rendered.emit(qt_image)
+            doc.close()
+        finally:
+            self.signals.render_finished.emit()
 
 
 class EventBus(QObject):
@@ -78,7 +122,6 @@ class QuestionBlockCard(ElevatedCardWidget):
             self.text_edit = None
 
             # Force GC
-            gc.collect()
 
     @Slot()
     def _on_text_changed(self):
@@ -90,8 +133,6 @@ class QuestionBlockCard(ElevatedCardWidget):
         """Synchronize Markdown -> HTML DOM without reloading entire page."""
         if self.web_engine_view and self.text_edit:
             # Using runJavaScript to patch HTML inline (assuming template loaded)
-            import json
-
             html_json = json.dumps(self.text_edit.toPlainText())
             js_patch = f"document.body.innerHTML = {html_json};"
             self.web_engine_view.page().runJavaScript(js_patch)
@@ -155,29 +196,18 @@ class CalibrationWorkspace(QWidget):
 
     def render_pdf_lazy(self, pdf_path: str):
         """
-        Loads PDF with fitz.Matrix(2.0, 2.0).
-        Actual Lazy Loading requires tracking scroll value, simplified here.
+        Spawns a background worker to render PDF pages.
         """
-        doc = fitz.open(pdf_path)
-        for page_num in range(min(2, doc.page_count)):  # Render only first 2 for now
-            page = doc.load_page(page_num)
-            pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
+        worker = PDFRenderWorker(pdf_path)
+        worker.signals.image_rendered.connect(self._on_pdf_image_rendered)
+        # Assuming global QThreadPool
+        QThreadPool.globalInstance().start(worker)
 
-            # Convert PyMuPDF Pixmap to QImage
-            qt_image = QImage(
-                pix.samples,
-                pix.width,
-                pix.height,
-                pix.stride,
-                QImage.Format.Format_RGB888,
-            )
-            label = QLabel()
-            label.setPixmap(QPixmap.fromImage(qt_image))
-            self.left_layout.addWidget(label)
-
-        # Close document and invoke GC
-        doc.close()
-        gc.collect()
+    @Slot(QImage)
+    def _on_pdf_image_rendered(self, qt_image: QImage):
+        label = QLabel()
+        label.setPixmap(QPixmap.fromImage(qt_image))
+        self.left_layout.addWidget(label)
 
 
 class AppWindow(FluentWindow):
