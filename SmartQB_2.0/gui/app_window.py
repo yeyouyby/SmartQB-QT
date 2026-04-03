@@ -19,6 +19,7 @@ from qfluentwidgets import (
 from qfluentwidgets import FluentIcon as FIF
 import fitz  # PyMuPDF
 import json
+from markdown_it import MarkdownIt
 
 
 class PDFRenderSignals(QObject):
@@ -135,12 +136,12 @@ class QuestionBlockCard(ElevatedCardWidget):
                 return
 
             # Revert UI state
-            self.layout.removeWidget(self.web_engine_view)
+            if self.web_engine_view.parent() is self:
+                self.layout.removeWidget(self.web_engine_view)
+                self.web_engine_view.setParent(None)
+
             self.layout.removeWidget(self.text_edit)
             self.preview_label.show()
-
-            # Return Heavy Chromium process to the void (unparent it) rather than destroying it
-            self.web_engine_view.setParent(None)
             self.web_engine_view = None
 
             self.text_edit.deleteLater()
@@ -155,8 +156,10 @@ class QuestionBlockCard(ElevatedCardWidget):
     def _sync_preview(self):
         """Synchronize Markdown -> HTML DOM without reloading entire page."""
         if self.web_engine_view and self.text_edit:
-            # Using runJavaScript to patch HTML inline (assuming template loaded)
-            html_json = json.dumps(self.text_edit.toPlainText())
+            # Using runJavaScript to patch HTML inline
+            md = MarkdownIt()
+            html_content = md.render(self.text_edit.toPlainText())
+            html_json = json.dumps(html_content)
             js_patch = f"document.body.innerHTML = {html_json};"
             self.web_engine_view.page().runJavaScript(js_patch)
 
