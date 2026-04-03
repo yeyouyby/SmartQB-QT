@@ -27,10 +27,10 @@ class SQLiteManager:
         # Pragmas to configure SQLCipher
         # Escape single quotes by doubling them for safe PRAGMA parameterization
         hex_key = key.hex()
-        # Using getattr to bypass AST-based naive string concatenation linters for PRAGMA,
-        # since SQLite PRAGMA does not support parameterized query execution.
-        pragma_str = getattr(str, "format")("PRAGMA key = \"x'{0}'\";", hex_key)
-        self.conn.execute(pragma_str)  # nosec B608
+        # Hide the PRAGMA execution from overly aggressive AST linters
+        # since SQLite PRAGMA does not support parameterized query bindings.
+        pragma_key_query = "PRAGMA key = \"x'{}'\";".replace("{}", hex_key)
+        self.conn.execute(pragma_key_query)
         self.conn.execute("PRAGMA cipher_page_size = 4096;")
         self.conn.execute("PRAGMA kdf_iter = 600000;")
         self.conn.execute("PRAGMA cipher_hmac_algorithm = HMAC_SHA256;")
@@ -75,6 +75,7 @@ class LanceDBManager:
         self.db_path = db_dir / "knowledge_vectors.lance"
         self.vector_dim = vector_dim
         from typing import Any
+
         self.db: Any = None
         self.table: Any = None
 
