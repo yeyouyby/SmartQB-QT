@@ -110,6 +110,9 @@ class LanceDBManager:
         Executes a single bulk insert transaction to LanceDB using the PyArrow table.
         Avoids I/O bottlenecks.
         """
+        if self.table is None:
+            raise RuntimeError("LanceDB table not initialized. Call connect() first.")
+
         # Convert dictionary batch to PyArrow Table based on schema
         pa_table = pa.Table.from_pylist(data_batch, schema=self.schema)
         self.table.add(pa_table)

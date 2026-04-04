@@ -140,7 +140,8 @@ class QuestionBlockCard(ElevatedCardWidget):
         if self.web_engine_view:
             # Prevent reverting if focus moved to a child (e.g., the TextEdit)
 
-            if self.isAncestorOf(QApplication.focusWidget()):
+            focused_widget = QApplication.focusWidget()
+            if focused_widget is None or self.isAncestorOf(focused_widget):
                 return
 
             # Revert UI state

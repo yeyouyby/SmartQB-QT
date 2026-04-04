@@ -35,6 +35,8 @@ class MinerUClient:
         )
         response.raise_for_status()
         task_id = response.json().get("task_id")
+        if not task_id:
+            raise RuntimeError(f"Failed to get task_id from MinerU: {response.text}")
 
         # 3. Long Polling
         max_retries = 90  # Increased to 180 seconds
@@ -46,7 +48,8 @@ class MinerUClient:
             if status_data.get("status") == "SUCCESS":
                 return status_data.get("result", {})
             elif status_data.get("status") == "FAILED":
-                raise RuntimeError(f"MinerU Task Failed: {status_data.get('error')}")
+                error_msg = status_data.get("error", "Unknown error")
+                raise RuntimeError(f"MinerU Task Failed: {error_msg}")
 
             await asyncio.sleep(2)
 
