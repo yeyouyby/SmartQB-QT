@@ -40,20 +40,19 @@ class PDFRenderWorker(QRunnable):
     @Slot()
     def run(self):
         try:
-            doc = fitz.open(self.pdf_path)
-            for page_num in range(min(2, doc.page_count)):
-                page = doc.load_page(page_num)
-                pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
+            with fitz.open(self.pdf_path) as doc:
+                for page_num in range(min(2, doc.page_count)):
+                    page = doc.load_page(page_num)
+                    pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
 
-                qt_image = QImage(
-                    pix.samples,
-                    pix.width,
-                    pix.height,
-                    pix.stride,
-                    QImage.Format.Format_RGB888,
-                ).copy()
-                self.signals.image_rendered.emit(qt_image)
-            doc.close()
+                    qt_image = QImage(
+                        pix.samples,
+                        pix.width,
+                        pix.height,
+                        pix.stride,
+                        QImage.Format.Format_RGB888,
+                    ).copy()
+                    self.signals.image_rendered.emit(qt_image)
         finally:
             self.signals.render_finished.emit()
 
@@ -106,6 +105,7 @@ class QuestionBlockCard(ElevatedCardWidget):
         self.debounce_timer.setSingleShot(True)
         self.debounce_timer.setInterval(300)
         self.debounce_timer.timeout.connect(self._sync_preview)
+        self.md = MarkdownIt()
 
     def mouseDoubleClickEvent(self, event):
         """Switch to State 2 (Active Edit) and borrow Chromium Engine from the pool."""
@@ -157,8 +157,7 @@ class QuestionBlockCard(ElevatedCardWidget):
         """Synchronize Markdown -> HTML DOM without reloading entire page."""
         if self.web_engine_view and self.text_edit:
             # Using runJavaScript to patch HTML inline
-            md = MarkdownIt()
-            html_content = md.render(self.text_edit.toPlainText())
+            html_content = self.md.render(self.text_edit.toPlainText())
             html_json = json.dumps(html_content)
             js_patch = f"document.body.innerHTML = {html_json};"
             self.web_engine_view.page().runJavaScript(js_patch)
