@@ -111,7 +111,7 @@ class QuestionBlockCard(ElevatedCardWidget):
         self.web_engine_view: QWebEngineView | None = None
         self.text_edit: TextEdit | None = None
 
-        self.debounce_timer = QTimer()
+        self.debounce_timer = QTimer(self)
         self.debounce_timer.setSingleShot(True)
         self.debounce_timer.setInterval(300)
         self.debounce_timer.timeout.connect(self._sync_preview)
