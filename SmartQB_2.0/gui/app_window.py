@@ -7,7 +7,14 @@ from PySide6.QtCore import (
     QRunnable,
     QThreadPool,
 )
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QSplitter, QVBoxLayout, QLabel
+from PySide6.QtWidgets import (
+    QWidget,
+    QHBoxLayout,
+    QSplitter,
+    QVBoxLayout,
+    QLabel,
+    QApplication,
+)
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtGui import QImage, QPixmap
 from qfluentwidgets import (
@@ -68,10 +75,11 @@ class WebEnginePool:
     @classmethod
     def get_view(cls, parent=None) -> QWebEngineView:
         if cls._instance is None:
-            cls._instance = QWebEngineView()
+            cls._hidden_parent = QWidget()  # type: ignore
+            cls._instance = QWebEngineView(cls._hidden_parent)  # type: ignore
 
         # Reset any previous state if needed
-        cls._instance.setParent(parent)
+        cls._instance.setParent(parent if parent else cls._hidden_parent)  # type: ignore
         return cls._instance
 
 
@@ -82,6 +90,8 @@ class EventBus(QObject):
 
 
 class QuestionBlockCard(ElevatedCardWidget):
+    _md_instance = MarkdownIt()
+
     """
     Flyweight Middle Panel Block.
     Switches between a light QLabel and heavy QWebEngineView dynamically.
@@ -105,7 +115,6 @@ class QuestionBlockCard(ElevatedCardWidget):
         self.debounce_timer.setSingleShot(True)
         self.debounce_timer.setInterval(300)
         self.debounce_timer.timeout.connect(self._sync_preview)
-        self.md = MarkdownIt()
 
     def mouseDoubleClickEvent(self, event):
         """Switch to State 2 (Active Edit) and borrow Chromium Engine from the pool."""
@@ -130,7 +139,6 @@ class QuestionBlockCard(ElevatedCardWidget):
         """Switch back to State 1 and release Chromium Engine resources back to the pool."""
         if self.web_engine_view:
             # Prevent reverting if focus moved to a child (e.g., the TextEdit)
-            from PySide6.QtWidgets import QApplication
 
             if self.isAncestorOf(QApplication.focusWidget()):
                 return
@@ -138,7 +146,7 @@ class QuestionBlockCard(ElevatedCardWidget):
             # Revert UI state
             if self.web_engine_view.parent() is self:
                 self.layout.removeWidget(self.web_engine_view)
-                self.web_engine_view.setParent(None)
+                WebEnginePool.get_view(None)
 
             self.layout.removeWidget(self.text_edit)
             self.preview_label.show()
@@ -157,9 +165,14 @@ class QuestionBlockCard(ElevatedCardWidget):
         """Synchronize Markdown -> HTML DOM without reloading entire page."""
         if self.web_engine_view and self.text_edit:
             # Using runJavaScript to patch HTML inline
-            html_content = self.md.render(self.text_edit.toPlainText())
+            html_content = self._md_instance.render(self.text_edit.toPlainText())
             html_json = json.dumps(html_content)
-            js_patch = f"document.body.innerHTML = {html_json};"
+            # Using DOMParser to avoid direct innerHTML assignment for better security
+            js_patch = f"""
+            const parser = new DOMParser();
+            const doc = parser.parseFromString({html_json}, "text/html");
+            document.body.replaceChildren(...doc.body.childNodes);
+            """
             self.web_engine_view.page().runJavaScript(js_patch)
 
 

@@ -56,7 +56,7 @@ class KMSManager:
             hash_len=self.ARGON2_HASH_LEN,
             type=Type.ID,
         )
-        return raw_hash
+        return bytearray(raw_hash)
 
     def generate_rsa_keypair(self) -> Tuple[bytes, bytes]:
         """
