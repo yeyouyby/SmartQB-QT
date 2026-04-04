@@ -37,7 +37,7 @@ class MinerUClient:
         task_id = response.json().get("task_id")
 
         # 3. Long Polling
-        max_retries = 30
+        max_retries = 90  # Increased to 180 seconds
         for _ in range(max_retries):
             status_res = await self.client.get(f"/tasks/{task_id}")
             status_res.raise_for_status()
@@ -50,7 +50,7 @@ class MinerUClient:
 
             await asyncio.sleep(2)
 
-        raise TimeoutError("MinerU task timed out after 60 seconds.")
+        raise TimeoutError("MinerU task timed out.")
 
     async def _convert_docx_to_pdf(self, file_path: Path) -> Path:
         """
