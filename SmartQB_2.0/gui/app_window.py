@@ -26,6 +26,7 @@ from qfluentwidgets import (
 from qfluentwidgets import FluentIcon as FIF
 import fitz  # PyMuPDF
 import json
+import bleach
 from markdown_it import MarkdownIt
 
 
@@ -135,19 +136,25 @@ class QuestionBlockCard(ElevatedCardWidget):
 
             self.text_edit.textChanged.connect(self._on_text_changed)
             self.text_edit.setFocus()
+            self.text_edit.installEventFilter(self)
 
             # Broadcast to EventBus that this block is active
             self.bus.question_focused.emit(self.block_id)
 
-    def focusOutEvent(self, event):
-        """Switch back to State 1 and release Chromium Engine resources back to the pool."""
-        if self.web_engine_view:
-            # Prevent reverting if focus moved to a child (e.g., the TextEdit)
+    def eventFilter(self, obj, event):
+        from PySide6.QtCore import QEvent
 
+        if obj is self.text_edit and event.type() == QEvent.Type.FocusOut:
             focused_widget = QApplication.focusWidget()
             if focused_widget is None or self.isAncestorOf(focused_widget):
-                return
+                pass
+            else:
+                self._revert_state()
+        return super().eventFilter(obj, event)
 
+    def _revert_state(self):
+        """Switch back to State 1 and release Chromium Engine resources back to the pool."""
+        if self.web_engine_view:
             # Revert UI state
             if self.web_engine_view.parent() is self:
                 self.layout.removeWidget(self.web_engine_view)
@@ -172,6 +179,30 @@ class QuestionBlockCard(ElevatedCardWidget):
         if self.web_engine_view and self.text_edit:
             # Using runJavaScript to patch HTML inline
             html_content = self._md_instance.render(self.text_edit.toPlainText())
+            # Sanitize output to prevent XSS vulnerabilities
+            html_content = bleach.clean(
+                html_content,
+                tags=bleach.sanitizer.ALLOWED_TAGS
+                | {
+                    "h1",
+                    "h2",
+                    "h3",
+                    "h4",
+                    "h5",
+                    "h6",
+                    "p",
+                    "br",
+                    "strong",
+                    "em",
+                    "code",
+                    "pre",
+                    "blockquote",
+                    "ul",
+                    "ol",
+                    "li",
+                },
+                attributes={"*": ["class", "id"]},
+            )
             html_json = json.dumps(html_content)
             # Using DOMParser to avoid direct innerHTML assignment for better security
             js_patch = f"""

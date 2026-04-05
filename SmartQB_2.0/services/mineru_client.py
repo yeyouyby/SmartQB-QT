@@ -23,7 +23,9 @@ class MinerUClient:
         """
         # 1. Graceful DOCX to PDF Conversion
         if file_path.suffix.lower() == ".docx":
-            await self._convert_docx_to_pdf(file_path)
+            file_path = await self._convert_docx_to_pdf(file_path)
+            if file_path is None:
+                raise FileNotFoundError("Could not convert DOCX to PDF for UI preview.")
 
             # 2. MinerU Submission
         async with await anyio.open_file(file_path, "rb") as f:
