@@ -25,6 +25,7 @@ class MinerUClient:
         Sends DOCX/PDF to MinerU and long-polls the task status.
         """
         # 1. Graceful DOCX to PDF Conversion
+        pdf_preview_path = None
         if file_path.suffix.lower() == ".docx":
             pdf_preview_path = await self._convert_docx_to_pdf(file_path)
 
@@ -47,7 +48,7 @@ class MinerUClient:
 
             if status_data.get("status") == "SUCCESS":
                 result_data = status_data.get("result", {})
-                if file_path.suffix.lower() == ".docx":
+                if file_path.suffix.lower() == ".docx" and pdf_preview_path:
                     result_data["pdf_preview_path"] = str(pdf_preview_path)
                 return result_data
             elif status_data.get("status") == "FAILED":
@@ -58,7 +59,7 @@ class MinerUClient:
 
         raise TimeoutError("MinerU task timed out.")
 
-    async def _convert_docx_to_pdf(self, file_path: Path) -> Path:
+    async def _convert_docx_to_pdf(self, file_path: Path) -> Path | None:
         """
         Converts DOCX to PDF silently via LibreOffice or docx2pdf.
         Provides a graceful degradation if the conversion tool is missing.
@@ -91,4 +92,4 @@ class MinerUClient:
             logging.warning(
                 f"Could not convert DOCX to PDF for UI preview. Skipping. Error: {e}"
             )
-            return file_path
+            return None

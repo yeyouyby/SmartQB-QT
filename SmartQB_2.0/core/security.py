@@ -27,7 +27,7 @@ class KMSManager:
         # Argon2 configuration matching current security standards
         pass
 
-    def derive_master_key(self, password: str, salt: bytes) -> bytes:
+    def derive_master_key(self, password: str, salt: bytes) -> bytearray:
         """
         Derives an AES-256 (32 bytes) master key from a password using Argon2.
         Note: The returned key is 32 bytes of raw material extracted from Argon2 hash.
@@ -49,7 +49,7 @@ class KMSManager:
             hash_len=self.ARGON2_HASH_LEN,
             type=Type.ID,
         )
-        return raw_hash
+        return bytearray(raw_hash)
 
     def generate_rsa_keypair(self) -> Tuple[bytes, bytes]:
         """
