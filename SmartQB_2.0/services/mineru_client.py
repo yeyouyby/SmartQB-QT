@@ -26,7 +26,7 @@ class MinerUClient:
         """
         # 1. Graceful DOCX to PDF Conversion
         if file_path.suffix.lower() == ".docx":
-            await self._convert_docx_to_pdf(file_path)
+            pdf_preview_path = await self._convert_docx_to_pdf(file_path)
 
         # 2. MinerU Submission (Intentionally passing original file, NOT the PDF)
         file_content = await asyncio.to_thread(file_path.read_bytes)
@@ -46,7 +46,10 @@ class MinerUClient:
             status_data = status_res.json()
 
             if status_data.get("status") == "SUCCESS":
-                return status_data.get("result", {})
+                result_data = status_data.get("result", {})
+                if file_path.suffix.lower() == ".docx":
+                    result_data["pdf_preview_path"] = str(pdf_preview_path)
+                return result_data
             elif status_data.get("status") == "FAILED":
                 error_msg = status_data.get("error", "Unknown error")
                 raise RuntimeError(f"MinerU Task Failed: {error_msg}")
