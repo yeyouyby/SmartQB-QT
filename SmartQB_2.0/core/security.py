@@ -2,6 +2,7 @@ import hmac
 import hashlib
 import base64
 import os
+from argon2.low_level import hash_secret_raw, Type
 import json
 from typing import Tuple
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
@@ -42,7 +43,6 @@ class KMSManager:
         """
         # argon2-cffi's hash() returns a formatted string. For raw key derivation
         # we can use the low-level API or hash string extraction.
-        from argon2.low_level import hash_secret_raw, Type
 
         # password to bytes
         password_bytes = password.encode("utf-8")
