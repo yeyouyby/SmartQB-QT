@@ -25,9 +25,7 @@ class SQLiteManager:
         self.conn = sqlite.connect(str(self.db_path))
 
         # Pragmas to configure SQLCipher
-        # Escape single quotes by doubling them for safe PRAGMA parameterization
         hex_key = key.hex()
-        # since SQLite PRAGMA does not support parameterized query bindings.
         self.conn.execute(f"PRAGMA key = \"x'{hex_key}'\";")  # type: ignore[attr-defined] # sourcery skip: avoid-sql-string-concatenation, sql-injection
         self.conn.execute("PRAGMA cipher_page_size = 4096;")
         self.conn.execute("PRAGMA kdf_iter = 600000;")
