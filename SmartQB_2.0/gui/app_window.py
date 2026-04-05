@@ -120,6 +120,9 @@ class QuestionBlockCard(ElevatedCardWidget):
         """Switch to State 2 (Active Edit) and borrow Chromium Engine from the pool."""
         if not self.web_engine_view:
             self.web_engine_view = WebEnginePool.get_view(self)
+            # Clear stale content immediately
+            self.web_engine_view.page().runJavaScript("document.body.innerHTML = ''; window.current_block_id = undefined;")
+            self._current_sync_id = 0
             self.text_edit = TextEdit(self)
 
             # Hide preview label
@@ -153,6 +156,7 @@ class QuestionBlockCard(ElevatedCardWidget):
             self.preview_label.show()
             self.web_engine_view = None
 
+            self.debounce_timer.stop()
             self.text_edit.deleteLater()
             self.text_edit = None
 
@@ -163,6 +167,8 @@ class QuestionBlockCard(ElevatedCardWidget):
 
     @Slot()
     def _sync_preview(self):
+        self._current_sync_id = getattr(self, "_current_sync_id", 0) + 1
+        sync_id = self._current_sync_id
         """Synchronize Markdown -> HTML DOM without reloading entire page."""
         if self.web_engine_view and self.text_edit:
             # Using runJavaScript to patch HTML inline
@@ -174,7 +180,14 @@ class QuestionBlockCard(ElevatedCardWidget):
             const doc = parser.parseFromString({html_json}, "text/html");
             document.body.replaceChildren(...doc.body.childNodes);
             """
-            self.web_engine_view.page().runJavaScript(js_patch)
+            # We use block-scoped data attribute in JS as a guard against race conditions
+            js_patch_guarded = f"""
+            if (window.current_block_id === undefined || window.current_block_id === {self.block_id}) {{
+                window.current_block_id = {self.block_id};
+                {js_patch}
+            }}
+            """
+            self.web_engine_view.page().runJavaScript(js_patch_guarded)
 
 
 class CalibrationWorkspace(QWidget):
