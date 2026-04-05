@@ -121,7 +121,9 @@ class QuestionBlockCard(ElevatedCardWidget):
         if not self.web_engine_view:
             self.web_engine_view = WebEnginePool.get_view(self)
             # Clear stale content immediately
-            self.web_engine_view.page().runJavaScript("document.body.innerHTML = ''; window.current_block_id = undefined;")
+            self.web_engine_view.page().runJavaScript(
+                "document.body.innerHTML = ''; window.current_block_id = undefined;"
+            )
             self._current_sync_id = 0
             self.text_edit = TextEdit(self)
 
@@ -168,7 +170,6 @@ class QuestionBlockCard(ElevatedCardWidget):
     @Slot()
     def _sync_preview(self):
         self._current_sync_id = getattr(self, "_current_sync_id", 0) + 1
-        sync_id = self._current_sync_id
         """Synchronize Markdown -> HTML DOM without reloading entire page."""
         if self.web_engine_view and self.text_edit:
             # Using runJavaScript to patch HTML inline
