@@ -1,6 +1,5 @@
 import httpx
 import asyncio
-import subprocess
 import anyio
 import logging
 from pathlib import Path
@@ -69,8 +68,8 @@ class MinerUClient:
                 str(file_path),
                 "--outdir",
                 str(file_path.parent),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
             await process.communicate()
 
