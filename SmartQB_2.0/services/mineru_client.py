@@ -1,6 +1,7 @@
 import httpx
 import asyncio
 import subprocess
+import anyio
 import logging
 from pathlib import Path
 from typing import Dict, Any
@@ -17,49 +18,39 @@ class MinerUClient:
             base_url=base_url, headers={"Authorization": f"Bearer {api_key}"}
         )
 
-    async def close(self):
-        await self.client.aclose()
-
     async def process_document(self, file_path: Path) -> Dict[str, Any]:
         """
         Sends DOCX/PDF to MinerU and long-polls the task status.
         """
         # 1. Graceful DOCX to PDF Conversion
-        pdf_preview_path = None
         if file_path.suffix.lower() == ".docx":
-            pdf_preview_path = await self._convert_docx_to_pdf(file_path)
+            await self._convert_docx_to_pdf(file_path)
 
-        # 2. MinerU Submission (Intentionally passing original file, NOT the PDF)
-        file_content = await asyncio.to_thread(file_path.read_bytes)
-        response = await self.client.post(
-            "/tasks", files={"file": (file_path.name, file_content)}
-        )
+            # 2. MinerU Submission
+        async with await anyio.open_file(file_path, "rb") as f:
+            response = await self.client.post(
+                "/tasks", files={"file": (file_path.name, f)}
+            )
         response.raise_for_status()
         task_id = response.json().get("task_id")
-        if not task_id:
-            raise RuntimeError(f"Failed to get task_id from MinerU: {response.text}")
 
         # 3. Long Polling
-        max_retries = 90  # Increased to 180 seconds
+        max_retries = 30
         for _ in range(max_retries):
             status_res = await self.client.get(f"/tasks/{task_id}")
             status_res.raise_for_status()
             status_data = status_res.json()
 
             if status_data.get("status") == "SUCCESS":
-                result_data = status_data.get("result", {})
-                if file_path.suffix.lower() == ".docx" and pdf_preview_path:
-                    result_data["pdf_preview_path"] = str(pdf_preview_path)
-                return result_data
+                return status_data.get("result", {})
             elif status_data.get("status") == "FAILED":
-                error_msg = status_data.get("error", "Unknown error")
-                raise RuntimeError(f"MinerU Task Failed: {error_msg}")
+                raise RuntimeError(f"MinerU Task Failed: {status_data.get('error')}")
 
             await asyncio.sleep(2)
 
-        raise TimeoutError("MinerU task timed out.")
+        raise TimeoutError("MinerU task timed out after 60 seconds.")
 
-    async def _convert_docx_to_pdf(self, file_path: Path) -> Path | None:
+    async def _convert_docx_to_pdf(self, file_path: Path) -> Path:
         """
         Converts DOCX to PDF silently via LibreOffice or docx2pdf.
         Provides a graceful degradation if the conversion tool is missing.
@@ -92,4 +83,4 @@ class MinerUClient:
             logging.warning(
                 f"Could not convert DOCX to PDF for UI preview. Skipping. Error: {e}"
             )
-            return None
+            return file_path

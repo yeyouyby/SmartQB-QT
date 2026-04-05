@@ -1,7 +1,7 @@
 import lancedb
 import pyarrow as pa
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 
 from pysqlcipher3 import dbapi2 as sqlite
 
@@ -70,7 +70,6 @@ class LanceDBManager:
         # LanceDB directory is separate from sys_master.db
         self.db_path = db_dir / "knowledge_vectors.lance"
         self.vector_dim = vector_dim
-        from typing import Any
 
         self.db: Any = None
         self.table: Any = None
