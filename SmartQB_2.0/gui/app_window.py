@@ -124,7 +124,6 @@ class QuestionBlockCard(ElevatedCardWidget):
             self.web_engine_view.page().runJavaScript(
                 "document.body.innerHTML = ''; window.current_block_id = undefined;"
             )
-            self._current_sync_id = 0
             self.text_edit = TextEdit(self)
 
             # Hide preview label
@@ -169,7 +168,6 @@ class QuestionBlockCard(ElevatedCardWidget):
 
     @Slot()
     def _sync_preview(self):
-        self._current_sync_id = getattr(self, "_current_sync_id", 0) + 1
         """Synchronize Markdown -> HTML DOM without reloading entire page."""
         if self.web_engine_view and self.text_edit:
             # Using runJavaScript to patch HTML inline

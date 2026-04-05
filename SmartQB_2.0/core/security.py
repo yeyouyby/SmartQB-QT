@@ -2,7 +2,6 @@ import hmac
 import hashlib
 import base64
 import os
-from argon2.low_level import hash_secret_raw, Type
 import json
 from typing import Tuple
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
@@ -10,7 +9,6 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import serialization
-from argon2 import PasswordHasher
 
 
 class KMSManager:
@@ -27,15 +25,9 @@ class KMSManager:
 
     def __init__(self):
         # Argon2 configuration matching current security standards
-        self.ph = PasswordHasher(
-            time_cost=self.ARGON2_TIME_COST,
-            memory_cost=self.ARGON2_MEMORY_COST,
-            parallelism=self.ARGON2_PARALLELISM,
-            hash_len=self.ARGON2_HASH_LEN,
-            salt_len=self.ARGON2_SALT_LEN,
-        )
+        pass
 
-    def derive_master_key(self, password: str, salt: bytes) -> bytearray:
+    def derive_master_key(self, password: str, salt: bytes) -> bytes:
         """
         Derives an AES-256 (32 bytes) master key from a password using Argon2.
         Note: The returned key is 32 bytes of raw material extracted from Argon2 hash.
@@ -43,6 +35,7 @@ class KMSManager:
         """
         # argon2-cffi's hash() returns a formatted string. For raw key derivation
         # we can use the low-level API or hash string extraction.
+        from argon2.low_level import hash_secret_raw, Type
 
         # password to bytes
         password_bytes = password.encode("utf-8")
@@ -56,7 +49,7 @@ class KMSManager:
             hash_len=self.ARGON2_HASH_LEN,
             type=Type.ID,
         )
-        return bytearray(raw_hash)
+        return raw_hash
 
     def generate_rsa_keypair(self) -> Tuple[bytes, bytes]:
         """
@@ -89,7 +82,7 @@ class KMSManager:
         Returns:
             Tuple[bytes, bytes]: (ciphertext with auth tag, nonce)
         """
-        aesgcm = AESGCM(key)
+        aesgcm = AESGCM(bytes(key))
         nonce = os.urandom(12)
         ciphertext = aesgcm.encrypt(nonce, data, None)
         return ciphertext, nonce
@@ -98,7 +91,7 @@ class KMSManager:
         """
         Decrypts data using AES-256-GCM.
         """
-        aesgcm = AESGCM(key)
+        aesgcm = AESGCM(bytes(key))
         try:
             plaintext = aesgcm.decrypt(nonce, ciphertext, None)
             return plaintext
