@@ -27,6 +27,7 @@ from qfluentwidgets import FluentIcon as FIF
 import fitz  # PyMuPDF
 import json
 import bleach  # type: ignore
+from resources.config.constants import MAX_PREVIEW_PAGES
 from markdown_it import MarkdownIt
 
 
@@ -49,7 +50,7 @@ class PDFRenderWorker(QRunnable):
     def run(self):
         try:
             with fitz.open(self.pdf_path) as doc:
-                for page_num in range(min(2, doc.page_count)):
+                for page_num in range(min(MAX_PREVIEW_PAGES, doc.page_count)):
                     page = doc.load_page(page_num)
                     pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
 
