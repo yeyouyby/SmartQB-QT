@@ -76,6 +76,20 @@ class WebEnginePool:
 
     @classmethod
     def get_view(cls, parent) -> QWebEngineView:
+        if cls._instance:
+            cls._instance.setUrl("about:blank")
+        if cls._instance:
+            cls._instance.setUrl("about:blank")
+        if cls._instance:
+            cls._instance.setUrl("about:blank")
+        if cls._instance:
+            cls._instance.setUrl("about:blank")
+        if cls._instance:
+            cls._instance.setUrl("about:blank")
+        if cls._instance:
+            cls._instance.setUrl("about:blank")
+        if cls._instance:
+            cls._instance.setUrl("about:blank")
         if cls._instance is None:
             cls._hidden_parent = QWidget()  # type: ignore
             cls._instance = QWebEngineView(cls._hidden_parent)  # type: ignore
@@ -207,25 +221,7 @@ class QuestionBlockCard(ElevatedCardWidget):
             # Sanitize output to prevent XSS vulnerabilities
             html_content = bleach.clean(
                 html_content,
-                tags=bleach.sanitizer.ALLOWED_TAGS
-                | {
-                    "h1",
-                    "h2",
-                    "h3",
-                    "h4",
-                    "h5",
-                    "h6",
-                    "p",
-                    "br",
-                    "strong",
-                    "em",
-                    "code",
-                    "pre",
-                    "blockquote",
-                    "ul",
-                    "ol",
-                    "li",
-                },
+                tags=self._ALLOWED_HTML_TAGS,
                 attributes=self._ALLOWED_HTML_ATTRS,
             )
             html_json = json.dumps(html_content)
@@ -302,6 +298,41 @@ class CalibrationWorkspace(QWidget):
         self.right_label.setText(f"Editing Block ID: {block_id}\n\nAI Logic Chain: ...")
 
     def render_pdf_lazy(self, pdf_path: str):
+        # Clear previous PDF views
+        while self.left_layout.count():
+            child = self.left_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        # Clear previous PDF views
+        while self.left_layout.count():
+            child = self.left_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        # Clear previous PDF views
+        while self.left_layout.count():
+            child = self.left_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        # Clear previous PDF views
+        while self.left_layout.count():
+            child = self.left_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        # Clear previous PDF views
+        while self.left_layout.count():
+            child = self.left_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        # Clear previous PDF views
+        while self.left_layout.count():
+            child = self.left_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        # Clear previous PDF views
+        while self.left_layout.count():
+            child = self.left_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
         """
         Spawns a background worker to render PDF pages.
         """
