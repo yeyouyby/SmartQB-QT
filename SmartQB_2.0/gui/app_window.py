@@ -75,14 +75,19 @@ class WebEnginePool:
     _instance = None
 
     @classmethod
-    def get_view(cls, parent=None) -> QWebEngineView:
+    def get_view(cls, parent) -> QWebEngineView:
         if cls._instance is None:
             cls._hidden_parent = QWidget()  # type: ignore
             cls._instance = QWebEngineView(cls._hidden_parent)  # type: ignore
 
         # Reset any previous state if needed
-        cls._instance.setParent(parent if parent else cls._hidden_parent)  # type: ignore
+        cls._instance.setParent(parent)  # type: ignore
         return cls._instance
+
+    @classmethod
+    def release_view(cls):
+        if cls._instance and getattr(cls, "_hidden_parent", None):
+            cls._instance.setParent(cls._hidden_parent)  # type: ignore
 
 
 class EventBus(QObject):
@@ -92,6 +97,25 @@ class EventBus(QObject):
 
 
 class QuestionBlockCard(ElevatedCardWidget):
+    _ALLOWED_HTML_TAGS = bleach.sanitizer.ALLOWED_TAGS | {
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "p",
+        "br",
+        "strong",
+        "em",
+        "code",
+        "pre",
+        "blockquote",
+        "ul",
+        "ol",
+        "li",
+    }
+    _ALLOWED_HTML_ATTRS = {"*": ["class", "id"]}
     _md_instance = MarkdownIt()
 
     """
@@ -159,7 +183,7 @@ class QuestionBlockCard(ElevatedCardWidget):
             # Revert UI state
             if self.web_engine_view.parent() is self:
                 self.layout.removeWidget(self.web_engine_view)
-                WebEnginePool.get_view(None)
+                WebEnginePool.release_view()
 
             self.layout.removeWidget(self.text_edit)
             self.preview_label.show()
@@ -202,7 +226,7 @@ class QuestionBlockCard(ElevatedCardWidget):
                     "ol",
                     "li",
                 },
-                attributes={"*": ["class", "id"]},
+                attributes=self._ALLOWED_HTML_ATTRS,
             )
             html_json = json.dumps(html_content)
             # Using DOMParser to avoid direct innerHTML assignment for better security
