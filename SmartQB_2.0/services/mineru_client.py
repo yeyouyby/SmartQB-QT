@@ -17,6 +17,9 @@ class MinerUClient:
             base_url=base_url, headers={"Authorization": f"Bearer {api_key}"}
         )
 
+    async def close(self):
+        await self.client.aclose()
+
     async def process_document(self, file_path: Path) -> Dict[str, Any]:
         """
         Sends DOCX/PDF to MinerU and long-polls the task status.
