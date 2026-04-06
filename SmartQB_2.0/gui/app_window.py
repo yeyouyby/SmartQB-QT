@@ -7,14 +7,7 @@ from PySide6.QtCore import (
     QRunnable,
     QThreadPool,
 )
-from PySide6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QSplitter,
-    QVBoxLayout,
-    QLabel,
-    QApplication,
-)
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QSplitter, QVBoxLayout, QLabel
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtGui import QImage, QPixmap
 from qfluentwidgets import (
@@ -26,9 +19,6 @@ from qfluentwidgets import (
 from qfluentwidgets import FluentIcon as FIF
 import fitz  # PyMuPDF
 import json
-import bleach  # type: ignore
-from resources.config.constants import MAX_PREVIEW_PAGES
-from markdown_it import MarkdownIt
 
 
 class PDFRenderSignals(QObject):
@@ -49,19 +39,20 @@ class PDFRenderWorker(QRunnable):
     @Slot()
     def run(self):
         try:
-            with fitz.open(self.pdf_path) as doc:
-                for page_num in range(min(MAX_PREVIEW_PAGES, doc.page_count)):
-                    page = doc.load_page(page_num)
-                    pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
+            doc = fitz.open(self.pdf_path)
+            for page_num in range(min(2, doc.page_count)):
+                page = doc.load_page(page_num)
+                pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
 
-                    qt_image = QImage(
-                        pix.samples,
-                        pix.width,
-                        pix.height,
-                        pix.stride,
-                        QImage.Format.Format_RGB888,
-                    ).copy()
-                    self.signals.image_rendered.emit(qt_image)
+                qt_image = QImage(
+                    pix.samples,
+                    pix.width,
+                    pix.height,
+                    pix.stride,
+                    QImage.Format.Format_RGB888,
+                ).copy()
+                self.signals.image_rendered.emit(qt_image)
+            doc.close()
         finally:
             self.signals.render_finished.emit()
 
@@ -75,33 +66,13 @@ class WebEnginePool:
     _instance = None
 
     @classmethod
-    def get_view(cls, parent) -> QWebEngineView:
-        if cls._instance:
-            cls._instance.setUrl("about:blank")
-        if cls._instance:
-            cls._instance.setUrl("about:blank")
-        if cls._instance:
-            cls._instance.setUrl("about:blank")
-        if cls._instance:
-            cls._instance.setUrl("about:blank")
-        if cls._instance:
-            cls._instance.setUrl("about:blank")
-        if cls._instance:
-            cls._instance.setUrl("about:blank")
-        if cls._instance:
-            cls._instance.setUrl("about:blank")
+    def get_view(cls, parent=None) -> QWebEngineView:
         if cls._instance is None:
-            cls._hidden_parent = QWidget()  # type: ignore
-            cls._instance = QWebEngineView(cls._hidden_parent)  # type: ignore
+            cls._instance = QWebEngineView()
 
         # Reset any previous state if needed
-        cls._instance.setParent(parent)  # type: ignore
+        cls._instance.setParent(parent)
         return cls._instance
-
-    @classmethod
-    def release_view(cls):
-        if cls._instance and getattr(cls, "_hidden_parent", None):
-            cls._instance.setParent(cls._hidden_parent)  # type: ignore
 
 
 class EventBus(QObject):
@@ -111,27 +82,6 @@ class EventBus(QObject):
 
 
 class QuestionBlockCard(ElevatedCardWidget):
-    _ALLOWED_HTML_TAGS = bleach.sanitizer.ALLOWED_TAGS | {
-        "h1",
-        "h2",
-        "h3",
-        "h4",
-        "h5",
-        "h6",
-        "p",
-        "br",
-        "strong",
-        "em",
-        "code",
-        "pre",
-        "blockquote",
-        "ul",
-        "ol",
-        "li",
-    }
-    _ALLOWED_HTML_ATTRS = {"*": ["class", "id"]}
-    _md_instance = MarkdownIt()
-
     """
     Flyweight Middle Panel Block.
     Switches between a light QLabel and heavy QWebEngineView dynamically.
@@ -151,7 +101,7 @@ class QuestionBlockCard(ElevatedCardWidget):
         self.web_engine_view: QWebEngineView | None = None
         self.text_edit: TextEdit | None = None
 
-        self.debounce_timer = QTimer(self)
+        self.debounce_timer = QTimer()
         self.debounce_timer.setSingleShot(True)
         self.debounce_timer.setInterval(300)
         self.debounce_timer.timeout.connect(self._sync_preview)
@@ -160,10 +110,6 @@ class QuestionBlockCard(ElevatedCardWidget):
         """Switch to State 2 (Active Edit) and borrow Chromium Engine from the pool."""
         if not self.web_engine_view:
             self.web_engine_view = WebEnginePool.get_view(self)
-            # Clear stale content immediately
-            self.web_engine_view.page().runJavaScript(
-                "document.body.innerHTML = ''; window.current_block_id = undefined;"
-            )
             self.text_edit = TextEdit(self)
 
             # Hide preview label
@@ -175,35 +121,28 @@ class QuestionBlockCard(ElevatedCardWidget):
 
             self.text_edit.textChanged.connect(self._on_text_changed)
             self.text_edit.setFocus()
-            self.text_edit.installEventFilter(self)
 
             # Broadcast to EventBus that this block is active
             self.bus.question_focused.emit(self.block_id)
 
-    def eventFilter(self, obj, event):
-        from PySide6.QtCore import QEvent
-
-        if obj is self.text_edit and event.type() == QEvent.Type.FocusOut:
-            focused_widget = QApplication.focusWidget()
-            if focused_widget is None or self.isAncestorOf(focused_widget):
-                pass
-            else:
-                self._revert_state()
-        return super().eventFilter(obj, event)
-
-    def _revert_state(self):
+    def focusOutEvent(self, event):
         """Switch back to State 1 and release Chromium Engine resources back to the pool."""
         if self.web_engine_view:
-            # Revert UI state
-            if self.web_engine_view.parent() is self:
-                self.layout.removeWidget(self.web_engine_view)
-                WebEnginePool.release_view()
+            # Prevent reverting if focus moved to a child (e.g., the TextEdit)
+            from PySide6.QtWidgets import QApplication
 
+            if self.isAncestorOf(QApplication.focusWidget()):
+                return
+
+            # Revert UI state
+            self.layout.removeWidget(self.web_engine_view)
             self.layout.removeWidget(self.text_edit)
             self.preview_label.show()
+
+            # Return Heavy Chromium process to the void (unparent it) rather than destroying it
+            self.web_engine_view.setParent(None)
             self.web_engine_view = None
 
-            self.debounce_timer.stop()
             self.text_edit.deleteLater()
             self.text_edit = None
 
@@ -216,29 +155,10 @@ class QuestionBlockCard(ElevatedCardWidget):
     def _sync_preview(self):
         """Synchronize Markdown -> HTML DOM without reloading entire page."""
         if self.web_engine_view and self.text_edit:
-            # Using runJavaScript to patch HTML inline
-            html_content = self._md_instance.render(self.text_edit.toPlainText())
-            # Sanitize output to prevent XSS vulnerabilities
-            html_content = bleach.clean(
-                html_content,
-                tags=self._ALLOWED_HTML_TAGS,
-                attributes=self._ALLOWED_HTML_ATTRS,
-            )
-            html_json = json.dumps(html_content)
-            # Using DOMParser to avoid direct innerHTML assignment for better security
-            js_patch = f"""
-            const parser = new DOMParser();
-            const doc = parser.parseFromString({html_json}, "text/html");
-            document.body.replaceChildren(...doc.body.childNodes);
-            """
-            # We use block-scoped data attribute in JS as a guard against race conditions
-            js_patch_guarded = f"""
-            if (window.current_block_id === undefined || window.current_block_id === {self.block_id}) {{
-                window.current_block_id = {self.block_id};
-                {js_patch}
-            }}
-            """
-            self.web_engine_view.page().runJavaScript(js_patch_guarded)
+            # Using runJavaScript to patch HTML inline (assuming template loaded)
+            html_json = json.dumps(self.text_edit.toPlainText())
+            js_patch = f"document.body.innerHTML = {html_json};"
+            self.web_engine_view.page().runJavaScript(js_patch)
 
 
 class CalibrationWorkspace(QWidget):
@@ -298,41 +218,6 @@ class CalibrationWorkspace(QWidget):
         self.right_label.setText(f"Editing Block ID: {block_id}\n\nAI Logic Chain: ...")
 
     def render_pdf_lazy(self, pdf_path: str):
-        # Clear previous PDF views
-        while self.left_layout.count():
-            child = self.left_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-        # Clear previous PDF views
-        while self.left_layout.count():
-            child = self.left_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-        # Clear previous PDF views
-        while self.left_layout.count():
-            child = self.left_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-        # Clear previous PDF views
-        while self.left_layout.count():
-            child = self.left_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-        # Clear previous PDF views
-        while self.left_layout.count():
-            child = self.left_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-        # Clear previous PDF views
-        while self.left_layout.count():
-            child = self.left_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-        # Clear previous PDF views
-        while self.left_layout.count():
-            child = self.left_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
         """
         Spawns a background worker to render PDF pages.
         """
