@@ -12,7 +12,7 @@ class MinerUClient:
     Executes tasks non-blockingly and generates local PDF for DOCX.
     """
 
-    def __init__(self, api_key: str, base_url: str = "http://localhost:8000/api"):
+    def __init__(self, api_key: str, base_url: str = "http://localhost:8000/api/"):
         self.client = httpx.AsyncClient(
             base_url=base_url, headers={"Authorization": f"Bearer {api_key}"}
         )
@@ -30,14 +30,14 @@ class MinerUClient:
             file_path = pdf_preview_path
             # 2. MinerU Submission
         file_content = await asyncio.to_thread(file_path.read_bytes)
-        response = await self.client.post("/tasks", files={"file": file_content})
+        response = await self.client.post("tasks", files={"file": file_content})
         response.raise_for_status()
         task_id = response.json().get("task_id")
 
         # 3. Long Polling
         max_retries = 30
         for _ in range(max_retries):
-            status_res = await self.client.get(f"/tasks/{task_id}")
+            status_res = await self.client.get(f"tasks/{task_id}")
             status_res.raise_for_status()
             status_data = status_res.json()
 

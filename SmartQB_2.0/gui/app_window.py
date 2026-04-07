@@ -7,7 +7,14 @@ from PySide6.QtCore import (
     QRunnable,
     QThreadPool,
 )
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QSplitter, QVBoxLayout, QLabel, QApplication
+from PySide6.QtWidgets import (
+    QWidget,
+    QHBoxLayout,
+    QSplitter,
+    QVBoxLayout,
+    QLabel,
+    QApplication,
+)
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtGui import QImage, QPixmap
 from qfluentwidgets import (
@@ -86,7 +93,24 @@ class EventBus(QObject):
 
 
 class QuestionBlockCard(ElevatedCardWidget):
-    _ALLOWED_HTML_TAGS = bleach.sanitizer.ALLOWED_TAGS | {"h1", "h2", "h3", "h4", "h5", "h6", "p", "br", "strong", "em", "code", "pre", "blockquote", "ul", "ol", "li"}
+    _ALLOWED_HTML_TAGS = bleach.sanitizer.ALLOWED_TAGS | {
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "p",
+        "br",
+        "strong",
+        "em",
+        "code",
+        "pre",
+        "blockquote",
+        "ul",
+        "ol",
+        "li",
+    }
     _ALLOWED_HTML_ATTRS = {"*": ["class", "id"]}
     """
     Flyweight Middle Panel Block.
