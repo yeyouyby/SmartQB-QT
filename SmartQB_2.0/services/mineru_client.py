@@ -22,12 +22,8 @@ class MinerUClient:
         Sends DOCX/PDF to MinerU and long-polls the task status.
         """
         # 1. Graceful DOCX to PDF Conversion
-        pdf_preview_path = None
         if file_path.suffix.lower() == ".docx":
-            pdf_preview_path = await self._convert_docx_to_pdf(file_path)
-            if pdf_preview_path is None:
-                raise FileNotFoundError("Could not convert DOCX to PDF for UI preview.")
-            file_path = pdf_preview_path
+            file_path = await self._convert_docx_to_pdf(file_path)
             # 2. MinerU Submission
         file_content = await asyncio.to_thread(file_path.read_bytes)
         response = await self.client.post("tasks", files={"file": file_content})
