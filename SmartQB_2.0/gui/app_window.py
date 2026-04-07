@@ -170,7 +170,6 @@ class QuestionBlockCard(ElevatedCardWidget):
     def _revert_state(self):
         """Switch back to State 1 and release Chromium Engine resources back to the pool."""
         if self.web_engine_view:
-
             if self.isAncestorOf(QApplication.focusWidget()):
                 return
 
@@ -197,13 +196,14 @@ class QuestionBlockCard(ElevatedCardWidget):
         if self.web_engine_view and self.text_edit:
             # Using runJavaScript to patch HTML inline (assuming template loaded)
             from markdown_it import MarkdownIt
+
             md = MarkdownIt()
             raw_html = md.render(self.text_edit.toPlainText())
             clean_html = bleach.clean(
                 raw_html,
                 tags=self._ALLOWED_HTML_TAGS,
                 attributes=self._ALLOWED_HTML_ATTRS,
-                strip=True
+                strip=True,
             )
             html_json = json.dumps(clean_html)
             js_patch = f"document.body.innerHTML = {html_json};"
