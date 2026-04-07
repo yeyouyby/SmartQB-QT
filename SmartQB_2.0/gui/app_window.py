@@ -7,7 +7,14 @@ from PySide6.QtCore import (
     QRunnable,
     QThreadPool,
 )
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QSplitter, QVBoxLayout, QLabel
+from PySide6.QtWidgets import (
+    QWidget,
+    QHBoxLayout,
+    QSplitter,
+    QVBoxLayout,
+    QLabel,
+    QApplication,
+)
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtGui import QImage, QPixmap
 from qfluentwidgets import (
@@ -19,6 +26,8 @@ from qfluentwidgets import (
 from qfluentwidgets import FluentIcon as FIF
 import fitz  # PyMuPDF
 import json
+from resources.config.constants import MAX_PREVIEW_PAGES
+from markdown_it import MarkdownIt
 
 
 class PDFRenderSignals(QObject):
@@ -40,7 +49,7 @@ class PDFRenderWorker(QRunnable):
     def run(self):
         try:
             doc = fitz.open(self.pdf_path)
-            for page_num in range(min(2, doc.page_count)):
+            for page_num in range(min(MAX_PREVIEW_PAGES, doc.page_count)):
                 page = doc.load_page(page_num)
                 pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
 
@@ -129,9 +138,9 @@ class QuestionBlockCard(ElevatedCardWidget):
         """Switch back to State 1 and release Chromium Engine resources back to the pool."""
         if self.web_engine_view:
             # Prevent reverting if focus moved to a child (e.g., the TextEdit)
-            from PySide6.QtWidgets import QApplication
 
-            if self.isAncestorOf(QApplication.focusWidget()):
+            focus_widget = QApplication.focusWidget()
+            if focus_widget and self.isAncestorOf(focus_widget):
                 return
 
             # Revert UI state
@@ -156,7 +165,8 @@ class QuestionBlockCard(ElevatedCardWidget):
         """Synchronize Markdown -> HTML DOM without reloading entire page."""
         if self.web_engine_view and self.text_edit:
             # Using runJavaScript to patch HTML inline (assuming template loaded)
-            html_json = json.dumps(self.text_edit.toPlainText())
+            rendered_html = MarkdownIt().render(self.text_edit.toPlainText())
+            html_json = json.dumps(rendered_html)
             js_patch = f"document.body.innerHTML = {html_json};"
             self.web_engine_view.page().runJavaScript(js_patch)
 
