@@ -26,7 +26,9 @@ class MinerUClient:
             file_path = await self._convert_docx_to_pdf(file_path)
             # 2. MinerU Submission
         file_content = await asyncio.to_thread(file_path.read_bytes)
-        response = await self.client.post("tasks", files={"file": file_content})
+        response = await self.client.post(
+            "tasks", files={"file": (file_path.name, file_content)}
+        )
         response.raise_for_status()
         task_id = response.json().get("task_id")
 

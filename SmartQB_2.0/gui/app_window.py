@@ -27,6 +27,7 @@ from qfluentwidgets import FluentIcon as FIF
 import fitz  # PyMuPDF
 import json
 import bleach  # type: ignore
+from markdown_it import MarkdownIt
 
 
 class PDFRenderSignals(QObject):
@@ -48,6 +49,10 @@ class PDFRenderWorker(QRunnable):
     def run(self):
         try:
             doc = fitz.open(self.pdf_path)
+        except Exception as e:
+            print(f"Error opening PDF: {e}")
+            self.signals.render_finished.emit()
+            return
             for page_num in range(min(2, doc.page_count)):
                 page = doc.load_page(page_num)
                 pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
@@ -93,6 +98,7 @@ class EventBus(QObject):
 
 
 class QuestionBlockCard(ElevatedCardWidget):
+    _md_instance = MarkdownIt()
     _ALLOWED_HTML_TAGS = bleach.sanitizer.ALLOWED_TAGS | {
         "h1",
         "h2",
@@ -179,7 +185,8 @@ class QuestionBlockCard(ElevatedCardWidget):
             self.preview_label.show()
 
             # Return Heavy Chromium process to the void (unparent it) rather than destroying it
-            self.web_engine_view.setParent(None)
+            if self.web_engine_view.parent() is self:
+                self.web_engine_view.setParent(None)
             self.web_engine_view = None
 
             self.text_edit.deleteLater()
@@ -195,10 +202,8 @@ class QuestionBlockCard(ElevatedCardWidget):
         """Synchronize Markdown -> HTML DOM without reloading entire page."""
         if self.web_engine_view and self.text_edit:
             # Using runJavaScript to patch HTML inline (assuming template loaded)
-            from markdown_it import MarkdownIt
 
-            md = MarkdownIt()
-            raw_html = md.render(self.text_edit.toPlainText())
+            raw_html = self._md_instance.render(self.text_edit.toPlainText())
             clean_html = bleach.clean(
                 raw_html,
                 tags=self._ALLOWED_HTML_TAGS,
