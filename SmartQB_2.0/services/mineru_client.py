@@ -1,6 +1,6 @@
 import httpx
 import asyncio
-import anyio
+import subprocess
 import logging
 from pathlib import Path
 from typing import Dict, Any
@@ -17,9 +17,6 @@ class MinerUClient:
             base_url=base_url, headers={"Authorization": f"Bearer {api_key}"}
         )
 
-    async def close(self):
-        await self.client.aclose()
-
     async def process_document(self, file_path: Path) -> Dict[str, Any]:
         """
         Sends DOCX/PDF to MinerU and long-polls the task status.
@@ -27,19 +24,17 @@ class MinerUClient:
         # 1. Graceful DOCX to PDF Conversion
         if file_path.suffix.lower() == ".docx":
             file_path = await self._convert_docx_to_pdf(file_path)
-            if file_path is None or file_path.suffix.lower() != ".pdf":
+            if file_path is None:
                 raise FileNotFoundError("Could not convert DOCX to PDF for UI preview.")
 
             # 2. MinerU Submission
-        async with await anyio.open_file(file_path, "rb") as f:
-            response = await self.client.post(
-                "/tasks", files={"file": (file_path.name, f)}
-            )
+        file_content = await asyncio.to_thread(file_path.read_bytes)
+        response = await self.client.post("/tasks", files={"file": file_content})
         response.raise_for_status()
         task_id = response.json().get("task_id")
 
         # 3. Long Polling
-        max_retries = 150  # Increased to 300 seconds
+        max_retries = 30
         for _ in range(max_retries):
             status_res = await self.client.get(f"/tasks/{task_id}")
             status_res.raise_for_status()
@@ -52,7 +47,7 @@ class MinerUClient:
 
             await asyncio.sleep(2)
 
-        raise TimeoutError("MinerU task timed out after 300 seconds.")
+        raise TimeoutError("MinerU task timed out after 60 seconds.")
 
     async def _convert_docx_to_pdf(self, file_path: Path) -> Path:
         """
@@ -73,8 +68,8 @@ class MinerUClient:
                 str(file_path),
                 "--outdir",
                 str(file_path.parent),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
             await process.communicate()
 

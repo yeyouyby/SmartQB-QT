@@ -1,9 +1,9 @@
 from PySide6.QtCore import QStandardPaths, QCoreApplication
 import sys
-from resources.config.constants import DATA_FOLDER_NAME, DB_NAME
 from pathlib import Path
 
 from gui.views.auth_views import OOBEWizardWindow, LoginWindow
+from resources.config.constants import DATA_FOLDER_NAME, DB_NAME
 
 
 class BootRouter:

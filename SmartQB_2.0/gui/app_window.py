@@ -7,14 +7,7 @@ from PySide6.QtCore import (
     QRunnable,
     QThreadPool,
 )
-from PySide6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QSplitter,
-    QVBoxLayout,
-    QLabel,
-    QApplication,
-)
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QSplitter, QVBoxLayout, QLabel, QApplication
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtGui import QImage, QPixmap
 from qfluentwidgets import (
@@ -26,8 +19,7 @@ from qfluentwidgets import (
 from qfluentwidgets import FluentIcon as FIF
 import fitz  # PyMuPDF
 import json
-from resources.config.constants import MAX_PREVIEW_PAGES
-from markdown_it import MarkdownIt
+import bleach
 
 
 class PDFRenderSignals(QObject):
@@ -49,7 +41,7 @@ class PDFRenderWorker(QRunnable):
     def run(self):
         try:
             doc = fitz.open(self.pdf_path)
-            for page_num in range(min(MAX_PREVIEW_PAGES, doc.page_count)):
+            for page_num in range(min(2, doc.page_count)):
                 page = doc.load_page(page_num)
                 pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
 
@@ -78,8 +70,11 @@ class WebEnginePool:
     def get_view(cls, parent=None) -> QWebEngineView:
         if cls._instance is None:
             cls._instance = QWebEngineView()
-
-        # Reset any previous state if needed
+            cls._instance.setHtml("<html><body></body></html>")
+        else:
+            cls._instance.page().runJavaScript(
+                "if(document.body) document.body.innerHTML = '';"
+            )
         cls._instance.setParent(parent)
         return cls._instance
 
@@ -91,6 +86,8 @@ class EventBus(QObject):
 
 
 class QuestionBlockCard(ElevatedCardWidget):
+    _ALLOWED_HTML_TAGS = bleach.sanitizer.ALLOWED_TAGS | {"h1", "h2", "h3", "h4", "h5", "h6", "p", "br", "strong", "em", "code", "pre", "blockquote", "ul", "ol", "li"}
+    _ALLOWED_HTML_ATTRS = {"*": ["class", "id"]}
     """
     Flyweight Middle Panel Block.
     Switches between a light QLabel and heavy QWebEngineView dynamically.
@@ -130,17 +127,28 @@ class QuestionBlockCard(ElevatedCardWidget):
 
             self.text_edit.textChanged.connect(self._on_text_changed)
             self.text_edit.setFocus()
+            self.text_edit.installEventFilter(self)
 
             # Broadcast to EventBus that this block is active
             self.bus.question_focused.emit(self.block_id)
 
-    def focusOutEvent(self, event):
+    def eventFilter(self, obj, event):
+        from PySide6.QtCore import QEvent
+
+        if obj is self.text_edit and event.type() == QEvent.Type.FocusOut:
+            focused_widget = QApplication.focusWidget()
+            if focused_widget is None or self.isAncestorOf(focused_widget):
+                pass
+            else:
+                self._revert_state()
+        return super().eventFilter(obj, event)
+
+    def _revert_state(self):
         """Switch back to State 1 and release Chromium Engine resources back to the pool."""
         if self.web_engine_view:
-            # Prevent reverting if focus moved to a child (e.g., the TextEdit)
+            from PySide6.QtWidgets import QApplication
 
-            focus_widget = QApplication.focusWidget()
-            if focus_widget and self.isAncestorOf(focus_widget):
+            if self.isAncestorOf(QApplication.focusWidget()):
                 return
 
             # Revert UI state
@@ -165,8 +173,7 @@ class QuestionBlockCard(ElevatedCardWidget):
         """Synchronize Markdown -> HTML DOM without reloading entire page."""
         if self.web_engine_view and self.text_edit:
             # Using runJavaScript to patch HTML inline (assuming template loaded)
-            rendered_html = MarkdownIt().render(self.text_edit.toPlainText())
-            html_json = json.dumps(rendered_html)
+            html_json = json.dumps(self.text_edit.toPlainText())
             js_patch = f"document.body.innerHTML = {html_json};"
             self.web_engine_view.page().runJavaScript(js_patch)
 

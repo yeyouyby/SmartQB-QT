@@ -1,8 +1,6 @@
 from pathlib import Path
 import logging
 import sys
-import qasync  # type: ignore
-import asyncio
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMessageBox
 
@@ -52,10 +50,7 @@ def main():
 
     logging.info("Main app booted successfully and instantiated the router.")
 
-    loop = qasync.QEventLoop(app)
-    asyncio.set_event_loop(loop)
-    with loop:
-        sys.exit(loop.run_forever())
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":

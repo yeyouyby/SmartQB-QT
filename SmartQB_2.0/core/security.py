@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import serialization
+from argon2 import PasswordHasher
 
 
 class KMSManager:
@@ -25,7 +26,13 @@ class KMSManager:
 
     def __init__(self):
         # Argon2 configuration matching current security standards
-        pass
+        self.ph = PasswordHasher(
+            time_cost=self.ARGON2_TIME_COST,
+            memory_cost=self.ARGON2_MEMORY_COST,
+            parallelism=self.ARGON2_PARALLELISM,
+            hash_len=self.ARGON2_HASH_LEN,
+            salt_len=self.ARGON2_SALT_LEN,
+        )
 
     def derive_master_key(self, password: str, salt: bytes) -> bytearray:
         """
@@ -82,7 +89,7 @@ class KMSManager:
         Returns:
             Tuple[bytes, bytes]: (ciphertext with auth tag, nonce)
         """
-        aesgcm = AESGCM(bytes(key))
+        aesgcm = AESGCM(key)
         nonce = os.urandom(12)
         ciphertext = aesgcm.encrypt(nonce, data, None)
         return ciphertext, nonce
@@ -91,7 +98,7 @@ class KMSManager:
         """
         Decrypts data using AES-256-GCM.
         """
-        aesgcm = AESGCM(bytes(key))
+        aesgcm = AESGCM(key)
         try:
             plaintext = aesgcm.decrypt(nonce, ciphertext, None)
             return plaintext
