@@ -19,7 +19,7 @@ from qfluentwidgets import (
 from qfluentwidgets import FluentIcon as FIF
 import fitz  # PyMuPDF
 import json
-import bleach
+import bleach  # type: ignore
 
 
 class PDFRenderSignals(QObject):
