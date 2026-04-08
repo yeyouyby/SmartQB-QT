@@ -11,3 +11,6 @@ DB_NAME = "sys_master.db"
 # UI Dimensions
 DEFAULT_WINDOW_WIDTH = 800
 DEFAULT_WINDOW_HEIGHT = 600
+
+# Document Processing
+MAX_PREVIEW_PAGES = 2
