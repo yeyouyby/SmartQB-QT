@@ -2,6 +2,7 @@ import httpx
 import asyncio
 import subprocess
 import logging
+import platform
 from pathlib import Path
 from typing import Dict, Any
 
@@ -14,7 +15,9 @@ class MinerUClient:
 
     def __init__(self, api_key: str, base_url: str = "http://localhost:8000/api/"):
         self.client = httpx.AsyncClient(
-            base_url=base_url, headers={"Authorization": f"Bearer {api_key}"}
+            base_url=base_url,
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=60.0,
         )
 
     async def close(self):
@@ -38,7 +41,7 @@ class MinerUClient:
         task_id = response.json().get("task_id")
 
         # 3. Long Polling
-        max_retries = 30
+        max_retries = 150
         for _ in range(max_retries):
             status_res = await self.client.get(f"tasks/{task_id}")
             status_res.raise_for_status()
@@ -51,7 +54,7 @@ class MinerUClient:
 
             await asyncio.sleep(2)
 
-        raise TimeoutError("MinerU task timed out after 60 seconds.")
+        raise TimeoutError("MinerU task timed out.")
 
     async def _convert_docx_to_pdf(self, file_path: Path) -> Path:
         """
@@ -64,8 +67,18 @@ class MinerUClient:
 
         try:
             # LibreOffice headless approach for CI/Linux
+            soffice_cmd = "soffice"
+            if platform.system() == "Windows":
+                windows_path = Path("C:/Program Files/LibreOffice/program/soffice.exe")
+                if windows_path.exists():
+                    soffice_cmd = str(windows_path)
+            elif platform.system() == "Darwin":
+                mac_path = Path("/Applications/LibreOffice.app/Contents/MacOS/soffice")
+                if mac_path.exists():
+                    soffice_cmd = str(mac_path)
+
             process = await asyncio.create_subprocess_exec(  # nosec B603 B607
-                "soffice",
+                soffice_cmd,
                 "--headless",
                 "--convert-to",
                 "pdf",
