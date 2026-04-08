@@ -143,7 +143,7 @@ class KMSManager:
         Calculates HMAC-SHA256 signature for a dictionary to prevent tampering.
         """
         # Ensure consistent serialization order
-        config_str = json.dumps(config_dict, sort_keys=True)
+        config_str = json.dumps(config_dict, sort_keys=True, separators=(",", ":"))
         h = hmac.new(master_key, config_str.encode("utf-8"), hashlib.sha256)
         return base64.b64encode(h.digest()).decode("utf-8")
 

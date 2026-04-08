@@ -1,4 +1,5 @@
 from PySide6.QtCore import (
+    QEvent,
     Qt,
     QTimer,
     Signal,
@@ -81,7 +82,9 @@ class WebEnginePool:
     def get_view(cls, parent=None) -> QWebEngineView:
         if cls._instance is None:
             cls._instance = QWebEngineView()
-            cls._instance.setHtml("<html><body></body></html>")
+            cls._instance.setHtml(
+                '<html><head><style>body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; padding: 10px; color: #333; line-height: 1.5; }</style></head><body></body></html>'
+            )
         else:
             cls._instance.page().runJavaScript(
                 "if(document.body) document.body.innerHTML = '';"
@@ -162,7 +165,6 @@ class QuestionBlockCard(ElevatedCardWidget):
             self.bus.question_focused.emit(self.block_id)
 
     def eventFilter(self, obj, event):
-        from PySide6.QtCore import QEvent
 
         if obj is self.text_edit and event.type() == QEvent.Type.FocusOut:
             focused_widget = QApplication.focusWidget()
