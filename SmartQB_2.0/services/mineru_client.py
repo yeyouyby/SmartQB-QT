@@ -70,7 +70,7 @@ class MinerUClient:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            await process.communicate()
+            await asyncio.wait_for(process.communicate(), timeout=60.0)
 
             if process.returncode != 0:
                 raise FileNotFoundError("LibreOffice conversion failed or not found.")
