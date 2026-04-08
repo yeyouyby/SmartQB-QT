@@ -1,3 +1,4 @@
+import anyio
 import httpx
 import asyncio
 import subprocess
@@ -31,8 +32,6 @@ class MinerUClient:
         if file_path.suffix.lower() == ".docx":
             file_path = await self._convert_docx_to_pdf(file_path)
             # 2. MinerU Submission
-        import anyio
-
         async with await anyio.open_file(file_path, "rb") as f:
             response = await self.client.post(
                 "tasks", files={"file": (file_path.name, f)}
@@ -89,15 +88,20 @@ class MinerUClient:
                 stderr=subprocess.PIPE,
             )
             try:
-                await asyncio.wait_for(process.communicate(), timeout=60.0)
+                _, stderr = await asyncio.wait_for(process.communicate(), timeout=60.0)
             except asyncio.TimeoutError:
                 process.kill()
                 await process.wait()
                 raise
 
             if process.returncode != 0:
+                error_output = (
+                    stderr.decode("utf-8", errors="ignore")
+                    if stderr
+                    else "No error output."
+                )
                 raise RuntimeError(
-                    f"LibreOffice conversion failed with return code {process.returncode}"
+                    f"LibreOffice conversion failed with return code {process.returncode}. Error: {error_output}"
                 )
 
             return pdf_path

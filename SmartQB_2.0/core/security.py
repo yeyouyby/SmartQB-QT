@@ -10,7 +10,6 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import serialization
-from argon2 import PasswordHasher
 
 
 class KMSManager:
@@ -24,16 +23,6 @@ class KMSManager:
     ARGON2_PARALLELISM = 4
     ARGON2_HASH_LEN = 32
     ARGON2_SALT_LEN = 16
-
-    def __init__(self):
-        # Argon2 configuration matching current security standards
-        self.ph = PasswordHasher(
-            time_cost=self.ARGON2_TIME_COST,
-            memory_cost=self.ARGON2_MEMORY_COST,
-            parallelism=self.ARGON2_PARALLELISM,
-            hash_len=self.ARGON2_HASH_LEN,
-            salt_len=self.ARGON2_SALT_LEN,
-        )
 
     def derive_master_key(self, password: str, salt: bytes) -> bytearray:
         """
@@ -159,7 +148,7 @@ class KMSManager:
     def zero_memory(self, byte_array: bytearray):
         """
         Zeroes out memory of a bytearray to protect sensitive keys from remaining in memory.
-        Note: Python memory management makes true memory zeroing difficult, but bytearrays
+        Note: Python memory management makes true memory management difficult, but bytearrays
         can be overwritten before garbage collection.
         """
         for i in range(len(byte_array)):
