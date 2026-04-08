@@ -96,7 +96,9 @@ class MinerUClient:
                 raise
 
             if process.returncode != 0:
-                raise RuntimeError(f"LibreOffice conversion failed with return code {process.returncode}")
+                raise RuntimeError(
+                    f"LibreOffice conversion failed with return code {process.returncode}"
+                )
 
             return pdf_path
 
