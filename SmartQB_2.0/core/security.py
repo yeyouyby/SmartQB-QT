@@ -24,7 +24,7 @@ class KMSManager:
     ARGON2_HASH_LEN = 32
     ARGON2_SALT_LEN = 16
 
-    def derive_master_key(self, password: str, salt: bytes) -> bytearray:
+    def derive_master_key(self, password_bytes: bytes, salt: bytes) -> bytearray:
         """
         Derives an AES-256 (32 bytes) master key from a password using Argon2.
         Note: The returned key is 32 bytes of raw material extracted from Argon2 hash.
@@ -32,9 +32,6 @@ class KMSManager:
         """
         # argon2-cffi's hash() returns a formatted string. For raw key derivation
         # we can use the low-level API or hash string extraction.
-
-        # password to bytes
-        password_bytes = password.encode("utf-8")
 
         raw_hash = hash_secret_raw(
             secret=password_bytes,
