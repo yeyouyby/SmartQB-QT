@@ -40,6 +40,9 @@ class SQLiteManager:
         try:
             self.conn.execute("SELECT count(*) FROM sqlite_master;")
         except sqlite.DatabaseError:
+            if self.conn:
+                self.conn.close()
+            self.conn = None
             raise ValueError("Invalid database key or corrupted database.")
 
     def init_schema(self) -> None:
@@ -112,5 +115,7 @@ class LanceDBManager:
         Avoids I/O bottlenecks.
         """
         # Convert dictionary batch to PyArrow Table based on schema
+        if not data_batch:
+            return
         pa_table = pa.Table.from_pylist(data_batch, schema=self.schema)
         self.table.add(pa_table)
