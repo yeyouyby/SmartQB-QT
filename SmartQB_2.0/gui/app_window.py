@@ -86,12 +86,12 @@ class WebEnginePool:
                 '<html><head><style>body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; padding: 10px; color: #333; line-height: 1.5; }</style></head><body></body></html>'
             )
         else:
+
             def _callback(res):
                 pass
+
             cls._instance.page().runJavaScript(
-                "if(document.body) document.body.innerHTML = '';",
-                0,
-                _callback
+                "if(document.body) document.body.innerHTML = '';", 0, _callback
             )
         cls._instance.setParent(parent)
         return cls._instance

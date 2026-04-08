@@ -69,19 +69,26 @@ class MinerUClient:
         try:
             # LibreOffice headless approach for CI/Linux
             import shutil
+
             soffice_cmd = shutil.which("soffice")
             if not soffice_cmd:
                 if platform.system() == "Windows":
-                    windows_path = Path("C:/Program Files/LibreOffice/program/soffice.exe")
+                    windows_path = Path(
+                        "C:/Program Files/LibreOffice/program/soffice.exe"
+                    )
                     if windows_path.exists():
                         soffice_cmd = str(windows_path)
                 elif platform.system() == "Darwin":
-                    mac_path = Path("/Applications/LibreOffice.app/Contents/MacOS/soffice")
+                    mac_path = Path(
+                        "/Applications/LibreOffice.app/Contents/MacOS/soffice"
+                    )
                     if mac_path.exists():
                         soffice_cmd = str(mac_path)
 
             if not soffice_cmd:
-                raise FileNotFoundError("soffice executable not found in PATH or standard locations.")
+                raise FileNotFoundError(
+                    "soffice executable not found in PATH or standard locations."
+                )
 
             process = await asyncio.create_subprocess_exec(
                 soffice_cmd,
