@@ -16,7 +16,7 @@ class SQLiteManager:
         self.db_path = db_path
         self.conn: Optional[sqlite.Connection] = None
 
-    def connect(self, key: bytes) -> None:
+    def connect(self, key: bytearray) -> None:
         """
         Connects to the database and applies the master key for transparent encryption.
         """
