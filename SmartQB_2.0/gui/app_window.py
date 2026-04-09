@@ -151,7 +151,7 @@ class QuestionBlockCard(ElevatedCardWidget):
         self.web_engine_view: QWebEngineView | None = None
         self.text_edit: TextEdit | None = None
 
-        self.debounce_timer = QTimer()
+        self.debounce_timer = QTimer(self)
         self.debounce_timer.setSingleShot(True)
         self.debounce_timer.setInterval(300)
         self.debounce_timer.timeout.connect(self._sync_preview)
@@ -174,6 +174,7 @@ class QuestionBlockCard(ElevatedCardWidget):
 
             # Replace UI with heavy widgets
             self.layout.addWidget(self.web_engine_view)
+            self.web_engine_view.show()
             self.layout.addWidget(self.text_edit)
 
             self.text_edit.textChanged.connect(self._on_text_changed)
@@ -206,6 +207,7 @@ class QuestionBlockCard(ElevatedCardWidget):
 
             # Return Heavy Chromium process to the void (unparent it) rather than destroying it
             if self.web_engine_view.parent() is self:
+                self.web_engine_view.hide()
                 self.web_engine_view.setParent(None)
             self.web_engine_view = None
 
