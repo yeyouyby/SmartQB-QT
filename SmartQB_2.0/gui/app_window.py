@@ -30,6 +30,7 @@ from resources.config.constants import MAX_PREVIEW_PAGES
 import json
 import logging
 import bleach  # type: ignore
+from typing import Optional
 from markdown_it import MarkdownIt
 
 
@@ -73,24 +74,35 @@ class PDFRenderWorker(QRunnable):
 class WebEnginePool:
     """
     Global pool for QWebEngineView to prevent Chromium process creation/destruction overhead.
-    Maintains a single shared instance that is re-parented dynamically.
+    Maintains a small pool of shared instances to support multi-block concurrent editing.
     """
 
-    _instance = None
+    _pool: list[QWebEngineView] = []
+    MAX_INSTANCES = 3
 
     @classmethod
-    def get_view(cls, parent=None) -> QWebEngineView:
-        if cls._instance is None:
-            cls._instance = QWebEngineView()
-            cls._instance.setHtml(
+    def get_view(cls, parent=None) -> Optional[QWebEngineView]:
+        # Try to find an unused view (parent is None or not a widget in layout)
+        for view in cls._pool:
+            if view.parent() is None:
+                view.page().runJavaScript(
+                    "if(document.body) document.body.innerHTML = '';"
+                )
+                view.setParent(parent)
+                return view
+
+        # If pool isn't full, create a new one
+        if len(cls._pool) < cls.MAX_INSTANCES:
+            new_view = QWebEngineView()
+            new_view.setHtml(
                 '<html><head><style>body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; padding: 10px; color: #333; line-height: 1.5; }</style></head><body></body></html>'
             )
-        else:
-            cls._instance.page().runJavaScript(
-                "if(document.body) document.body.innerHTML = '';"
-            )
-        cls._instance.setParent(parent)
-        return cls._instance
+            new_view.setParent(parent)
+            cls._pool.append(new_view)
+            return new_view
+
+        # Pool exhausted, fallback to None (caller should handle)
+        return None
 
 
 class EventBus(QObject):
@@ -147,7 +159,14 @@ class QuestionBlockCard(ElevatedCardWidget):
     def mouseDoubleClickEvent(self, event):
         """Switch to State 2 (Active Edit) and borrow Chromium Engine from the pool."""
         if not self.web_engine_view:
-            self.web_engine_view = WebEnginePool.get_view(self)
+            view = WebEnginePool.get_view(self)
+            if not view:
+                logging.warning(
+                    "WebEnginePool exhausted. Cannot open more simultaneous editors."
+                )
+                return
+
+            self.web_engine_view = view
             self.text_edit = TextEdit(self)
 
             # Hide preview label
