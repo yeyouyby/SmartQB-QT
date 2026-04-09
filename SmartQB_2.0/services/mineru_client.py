@@ -2,6 +2,7 @@ import httpx
 import asyncio
 import logging
 import platform
+import os
 from pathlib import Path
 from typing import Dict, Any, Optional
 import shutil
@@ -69,13 +70,21 @@ class MinerUClient:
             # LibreOffice headless approach for CI/Linux
             soffice_cmd = shutil.which("soffice")
             if not soffice_cmd:
-                if platform.system() == "Windows":
-                    windows_path = Path(
-                        "C:/Program Files/LibreOffice/program/soffice.exe"
-                    )
-                    if windows_path.exists():
-                        soffice_cmd = str(windows_path)
-                elif platform.system() == "Darwin":
+                system = platform.system()
+                if system == "Windows":
+                    # Check both 64-bit and 32-bit program files directories
+                    possible_paths = []
+                    for env_var in ("ProgramFiles", "ProgramFiles(x86)"):
+                        program_files = os.environ.get(env_var)
+                        if program_files:
+                            possible_paths.append(
+                                Path(program_files) / "LibreOffice/program/soffice.exe"
+                            )
+                    for path in possible_paths:
+                        if path.exists():
+                            soffice_cmd = str(path)
+                            break
+                elif system == "Darwin":
                     mac_path = Path(
                         "/Applications/LibreOffice.app/Contents/MacOS/soffice"
                     )
