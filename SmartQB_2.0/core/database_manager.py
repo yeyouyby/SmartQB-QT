@@ -18,10 +18,14 @@ class SQLiteManager:
         self.db_path = db_path
         self.conn: Optional[sqlite.Connection] = None
 
-    def connect(self, key: bytearray) -> None:
+    def connect(self, key: bytearray, create: bool = False) -> None:
         """
         Connects to the database and applies the master key for transparent encryption.
+        If create=False, it will fail if the database file does not exist.
         """
+        if not create and not self.db_path.is_file():
+            raise FileNotFoundError(f"Database file not found: {self.db_path}")
+
         if self.conn:
             self.conn.close()
         self.conn = sqlite.connect(str(self.db_path))

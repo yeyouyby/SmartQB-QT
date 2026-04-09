@@ -8,8 +8,14 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 def get_script_root() -> Path:
     """
     Returns the project root directory.
+    Handles running from source and from a PyInstaller bundle.
     """
-    return Path(__file__).resolve().parent.parent
+    if getattr(sys, "frozen", False):
+        # The application is frozen
+        return Path(sys.executable).parent
+    else:
+        # The application is not frozen
+        return Path(__file__).resolve().parent.parent
 
 
 def main():
