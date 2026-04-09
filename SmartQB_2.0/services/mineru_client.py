@@ -1,11 +1,11 @@
-import anyio
 import httpx
 import asyncio
 import subprocess
 import logging
 import platform
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+import shutil
 
 
 class MinerUClient:
@@ -31,10 +31,10 @@ class MinerUClient:
         # 1. Graceful DOCX to PDF Conversion
         if file_path.suffix.lower() == ".docx":
             pdf_path = await self._convert_docx_to_pdf(file_path)
-            if pdf_path.exists():
+            if pdf_path:
                 file_path = pdf_path
             # 2. MinerU Submission
-        async with await anyio.open_file(file_path, "rb") as f:
+        with open(file_path, "rb") as f:
             response = await self.client.post(
                 "tasks", files={"file": (file_path.name, f)}
             )
@@ -57,7 +57,7 @@ class MinerUClient:
 
         raise TimeoutError("MinerU task timed out.")
 
-    async def _convert_docx_to_pdf(self, file_path: Path) -> Path:
+    async def _convert_docx_to_pdf(self, file_path: Path) -> Optional[Path]:
         """
         Converts DOCX to PDF silently via LibreOffice or docx2pdf.
         Provides a graceful degradation if the conversion tool is missing.
@@ -68,8 +68,6 @@ class MinerUClient:
 
         try:
             # LibreOffice headless approach for CI/Linux
-            import shutil
-
             soffice_cmd = shutil.which("soffice")
             if not soffice_cmd:
                 if platform.system() == "Windows":
@@ -124,4 +122,4 @@ class MinerUClient:
             logging.warning(
                 f"Could not convert DOCX to PDF for UI preview. Skipping. Error: {e}"
             )
-            return file_path
+            return None
