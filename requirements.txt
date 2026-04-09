@@ -33,7 +33,7 @@ PySide6-Fluent-Widgets==1.11.1
 PySide6_Addons==6.7.0
 PySide6_Essentials==6.7.0
 qframelesswindow==0.4.3
-pysqlcipher3==1.2.0
+sqlcipher3-binary==0.5.5
 python-dateutil==2.9.0.post0
 PyYAML==6.0.3
 rich==13.0.0

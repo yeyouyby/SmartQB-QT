@@ -6,6 +6,9 @@ from services.document_utils import convert_docx_to_pdf
 
 
 class MinerUClient:
+    MAX_POLLING_ATTEMPTS = 150
+    POLLING_DELAY_SECONDS = 2
+
     """
     MinerU RESTful API Async Client.
     Executes tasks non-blockingly and generates local PDF for DOCX.
@@ -39,8 +42,8 @@ class MinerUClient:
         task_id = response.json().get("task_id")
 
         # 3. Long Polling
-        max_retries = 150
-        for _ in range(max_retries):
+
+        for _ in range(self.MAX_POLLING_ATTEMPTS):
             status_res = await self.client.get(f"tasks/{task_id}")
             status_res.raise_for_status()
             status_data = status_res.json()
@@ -50,6 +53,6 @@ class MinerUClient:
             elif status_data.get("status") == "FAILED":
                 raise RuntimeError(f"MinerU Task Failed: {status_data.get('error')}")
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(self.POLLING_DELAY_SECONDS)
 
         raise TimeoutError("MinerU task timed out.")

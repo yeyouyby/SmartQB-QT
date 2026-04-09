@@ -1,14 +1,16 @@
 import lancedb
 import pyarrow as pa
 from pathlib import Path
-from typing import Optional, Any
+from typing import Optional
+import lancedb.db
+import lancedb.table
 
-from pysqlcipher3 import dbapi2 as sqlite
+from sqlcipher3 import dbapi2 as sqlite
 
 
 class SQLiteManager:
     """
-    Manages the encrypted sys_master.db using pysqlcipher3.
+    Manages the encrypted sys_master.db using sqlcipher3.
     Enforces AES-256 transparent encryption on the entire file.
     """
 
@@ -76,8 +78,8 @@ class LanceDBManager:
         self.db_path = db_dir / "knowledge_vectors.lance"
         self.vector_dim = vector_dim
 
-        self.db: Any = None
-        self.table: Any = None
+        self.db: Optional[lancedb.db.LanceDBConnection] = None
+        self.table: Optional[lancedb.table.LanceTable] = None
 
         # Define the strict PyArrow schema for Document Blocks
         self.schema = pa.schema(
@@ -116,4 +118,7 @@ class LanceDBManager:
         if not data_batch:
             return
         pa_table = pa.Table.from_pylist(data_batch, schema=self.schema)
-        self.table.add(pa_table)
+        if self.table:
+            self.table.add(pa_table)
+        else:
+            raise RuntimeError("LanceDB table not initialized. Call connect() first.")
