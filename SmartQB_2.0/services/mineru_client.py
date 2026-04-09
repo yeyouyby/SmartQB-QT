@@ -39,7 +39,14 @@ class MinerUClient:
             "tasks", files={"file": (file_path.name, file_content)}
         )
         response.raise_for_status()
-        task_id = response.json().get("task_id")
+        try:
+            response_data = response.json()
+        except Exception as e:
+            raise ValueError(f"Invalid JSON response from MinerU: {e}")
+
+        task_id = response_data.get("task_id")
+        if not task_id:
+            raise ValueError("Could not get task_id from MinerU response")
 
         # 3. Long Polling
 
@@ -48,10 +55,15 @@ class MinerUClient:
             status_res.raise_for_status()
             status_data = status_res.json()
 
-            if status_data.get("status") == "SUCCESS":
+            status = status_data.get("status")
+            if status == "SUCCESS":
                 return status_data.get("result", {})
-            elif status_data.get("status") == "FAILED":
+            elif status == "FAILED":
                 raise RuntimeError(f"MinerU Task Failed: {status_data.get('error')}")
+            elif status is None:
+                raise RuntimeError(
+                    "Invalid status response from MinerU: 'status' key missing."
+                )
 
             await asyncio.sleep(self.POLLING_DELAY_SECONDS)
 
