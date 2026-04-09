@@ -34,10 +34,10 @@ class MinerUClient:
             if pdf_path:
                 file_path = pdf_path
             # 2. MinerU Submission
-        with open(file_path, "rb") as f:
-            response = await self.client.post(
-                "tasks", files={"file": (file_path.name, f)}
-            )
+        file_content = await asyncio.to_thread(file_path.read_bytes)
+        response = await self.client.post(
+            "tasks", files={"file": (file_path.name, file_content)}
+        )
         response.raise_for_status()
         task_id = response.json().get("task_id")
 

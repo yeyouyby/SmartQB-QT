@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives import serialization
 class KMSManager:
     """
     Key Management System for SmartQB.
-    Implements Hybrid KMS with Argon2, AES-256-GCM, and RSA-2048.
+    Implements Hybrid KMS with Argon2, AES-256-GCM, and RSA-4096.
     """
 
     ARGON2_TIME_COST = 3
@@ -46,13 +46,13 @@ class KMSManager:
 
     def generate_rsa_keypair(self) -> Tuple[bytes, bytes]:
         """
-        Generates an RSA-2048 key pair.
+        Generates an RSA-4096 key pair.
         Returns:
             Tuple[bytes, bytes]: (private_key_pem, public_key_pem)
         """
         private_key = rsa.generate_private_key(
             public_exponent=65537,
-            key_size=2048,
+            key_size=4096,
         )
         public_key = private_key.public_key()
 
