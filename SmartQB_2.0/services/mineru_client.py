@@ -1,3 +1,4 @@
+import logging
 import httpx
 import asyncio
 from pathlib import Path
@@ -51,9 +52,15 @@ class MinerUClient:
         # 3. Long Polling
 
         for _ in range(self.MAX_POLLING_ATTEMPTS):
-            status_res = await self.client.get(f"tasks/{task_id}")
-            status_res.raise_for_status()
-            status_data = status_res.json()
+            try:
+                status_res = await self.client.get(f"tasks/{task_id}")
+                status_res.raise_for_status()
+                status_data = status_res.json()
+            except httpx.RequestError as e:
+                # Handle transient network issues without aborting the entire process
+                logging.warning(f"MinerU polling connection issue, retrying: {e}")
+                await asyncio.sleep(self.POLLING_DELAY_SECONDS)
+                continue
 
             status = status_data.get("status")
             if status == "SUCCESS":

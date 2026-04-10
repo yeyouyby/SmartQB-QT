@@ -56,7 +56,13 @@ def main():
 
     logging.info("Main app booted successfully and instantiated the router.")
 
-    sys.exit(app.exec())
+    import qasync
+    import asyncio
+
+    loop = qasync.QEventLoop(app)
+    asyncio.set_event_loop(loop)
+    with loop:
+        sys.exit(loop.run_forever())
 
 
 if __name__ == "__main__":

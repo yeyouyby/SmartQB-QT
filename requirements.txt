@@ -46,3 +46,4 @@ typing_extensions==4.15.0
 urllib3==2.3.0
 xcffib==1.12.0
 bleach==6.1.0
+qasync==0.27.1

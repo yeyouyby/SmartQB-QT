@@ -44,6 +44,12 @@ async def convert_docx_to_pdf(file_path: Path) -> Optional[Path]:
                 "soffice executable not found in PATH or standard locations."
             )
 
+        import tempfile
+
+        # Use the system temp directory as a robust staging area for libreoffice conversion output
+        temp_outdir = Path(tempfile.gettempdir()) / "smartqb_conversions"
+        temp_outdir.mkdir(parents=True, exist_ok=True)
+
         process = await asyncio.create_subprocess_exec(
             soffice_cmd,
             "--headless",
@@ -51,7 +57,7 @@ async def convert_docx_to_pdf(file_path: Path) -> Optional[Path]:
             "pdf",
             str(file_path),
             "--outdir",
-            str(file_path.parent),
+            str(temp_outdir),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -71,6 +77,12 @@ async def convert_docx_to_pdf(file_path: Path) -> Optional[Path]:
             raise RuntimeError(
                 f"LibreOffice conversion failed with return code {process.returncode}. Error: {error_output}"
             )
+
+        # Move the converted file from the robust temp dir back to the target directory
+        temp_pdf_path = temp_outdir / file_path.with_suffix(".pdf").name
+        if temp_pdf_path.exists():
+            shutil.copy2(temp_pdf_path, pdf_path)
+            temp_pdf_path.unlink()  # cleanup the temporary file
 
         return pdf_path
 
