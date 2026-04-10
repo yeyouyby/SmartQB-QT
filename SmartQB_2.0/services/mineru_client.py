@@ -1,3 +1,4 @@
+import json
 import logging
 import httpx
 import asyncio
@@ -35,10 +36,10 @@ class MinerUClient:
             if pdf_path:
                 file_path = pdf_path
             # 2. MinerU Submission
-        file_content = await asyncio.to_thread(file_path.read_bytes)
-        response = await self.client.post(
-            "tasks", files={"file": (file_path.name, file_content)}
-        )
+        with open(file_path, "rb") as f:
+            response = await self.client.post(
+                "tasks", files={"file": (file_path.name, f)}
+            )
         response.raise_for_status()
         try:
             response_data = response.json()
@@ -46,7 +47,7 @@ class MinerUClient:
                 raise ValueError(
                     f"Unexpected JSON response format from MinerU: {type(response_data)}"
                 )
-        except httpx.JSONDecodeError as e:
+        except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON response from MinerU: {e}")
 
         task_id = response_data.get("task_id")
