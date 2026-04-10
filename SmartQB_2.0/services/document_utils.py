@@ -46,45 +46,44 @@ async def convert_docx_to_pdf(file_path: Path) -> Optional[Path]:
 
         import tempfile
 
-        # Use the system temp directory as a robust staging area for libreoffice conversion output
-        temp_outdir = Path(tempfile.gettempdir()) / "smartqb_conversions"
-        temp_outdir.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="smartqb_") as temp_dir:
+            temp_outdir = Path(temp_dir)
 
-        process = await asyncio.create_subprocess_exec(
-            soffice_cmd,
-            "--headless",
-            "--convert-to",
-            "pdf",
-            str(file_path),
-            "--outdir",
-            str(temp_outdir),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        try:
-            _, stderr = await asyncio.wait_for(process.communicate(), timeout=60.0)
-        except asyncio.TimeoutError:
-            process.kill()
-            await process.wait()
-            raise
-
-        if process.returncode != 0:
-            error_output = (
-                stderr.decode("utf-8", errors="ignore")
-                if stderr
-                else "No error output."
+            process = await asyncio.create_subprocess_exec(
+                soffice_cmd,
+                "--headless",
+                "--convert-to",
+                "pdf",
+                str(file_path),
+                "--outdir",
+                str(temp_outdir),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
-            raise RuntimeError(
-                f"LibreOffice conversion failed with return code {process.returncode}. Error: {error_output}"
-            )
+            try:
+                _, stderr = await asyncio.wait_for(process.communicate(), timeout=60.0)
+            except asyncio.TimeoutError:
+                process.kill()
+                await process.wait()
+                raise
 
-        # Move the converted file from the robust temp dir back to the target directory
-        temp_pdf_path = temp_outdir / file_path.with_suffix(".pdf").name
-        if temp_pdf_path.exists():
-            shutil.copy2(temp_pdf_path, pdf_path)
-            temp_pdf_path.unlink()  # cleanup the temporary file
+            if process.returncode != 0:
+                error_output = (
+                    stderr.decode("utf-8", errors="ignore")
+                    if stderr
+                    else "No error output."
+                )
+                raise RuntimeError(
+                    f"LibreOffice conversion failed with return code {process.returncode}. Error: {error_output}"
+                )
 
-        return pdf_path
+            # Move the converted file from the unique temp dir back to the target directory
+            temp_pdf_path = temp_outdir / file_path.with_suffix(".pdf").name
+            if temp_pdf_path.exists():
+                shutil.copy2(temp_pdf_path, pdf_path)
+                return pdf_path
+
+        return None
 
     except Exception as e:
         logging.warning(
