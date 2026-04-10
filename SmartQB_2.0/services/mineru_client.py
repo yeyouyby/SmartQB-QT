@@ -42,6 +42,10 @@ class MinerUClient:
         response.raise_for_status()
         try:
             response_data = response.json()
+            if not isinstance(response_data, dict):
+                raise ValueError(
+                    f"Unexpected JSON response format from MinerU: {type(response_data)}"
+                )
         except httpx.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON response from MinerU: {e}")
 

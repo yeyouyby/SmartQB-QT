@@ -30,7 +30,6 @@ from resources.config.constants import MAX_PREVIEW_PAGES
 import json
 import logging
 import bleach  # type: ignore
-from typing import Optional
 from markdown_it import MarkdownIt
 
 
@@ -81,7 +80,7 @@ class WebEnginePool:
     MAX_INSTANCES = 3
 
     @classmethod
-    def get_view(cls, parent=None) -> Optional[QWebEngineView]:
+    def get_view(cls, parent=None) -> QWebEngineView:
         # Try to find an unused view (parent is None or not a widget in layout)
         for view in cls._pool:
             if view.parent() is None:
@@ -91,18 +90,19 @@ class WebEnginePool:
                 view.setParent(parent)
                 return view
 
-        # If pool isn't full, create a new one
-        if len(cls._pool) < cls.MAX_INSTANCES:
-            new_view = QWebEngineView()
-            new_view.setHtml(
-                '<html><head><style>body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; padding: 10px; color: #333; line-height: 1.5; }</style></head><body></body></html>'
+        # If pool isn't full, create a new one. If full, dynamically grow but log a warning.
+        if len(cls._pool) >= cls.MAX_INSTANCES:
+            logging.warning(
+                f"WebEnginePool capacity ({cls.MAX_INSTANCES}) exceeded. Dynamically growing to {len(cls._pool) + 1}."
             )
-            new_view.setParent(parent)
-            cls._pool.append(new_view)
-            return new_view
 
-        # Pool exhausted, fallback to None (caller should handle)
-        return None
+        new_view = QWebEngineView()
+        new_view.setHtml(
+            '<html><head><style>body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; padding: 10px; line-height: 1.5; }</style></head><body></body></html>'
+        )
+        new_view.setParent(parent)
+        cls._pool.append(new_view)
+        return new_view
 
 
 class EventBus(QObject):
@@ -159,14 +159,7 @@ class QuestionBlockCard(ElevatedCardWidget):
     def mouseDoubleClickEvent(self, event):
         """Switch to State 2 (Active Edit) and borrow Chromium Engine from the pool."""
         if not self.web_engine_view:
-            view = WebEnginePool.get_view(self)
-            if not view:
-                logging.warning(
-                    "WebEnginePool exhausted. Cannot open more simultaneous editors."
-                )
-                return
-
-            self.web_engine_view = view
+            self.web_engine_view = WebEnginePool.get_view(self)
             self.text_edit = TextEdit(self)
 
             # Hide preview label

@@ -3,6 +3,7 @@ import logging
 import platform
 import os
 import shutil
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -43,8 +44,6 @@ async def convert_docx_to_pdf(file_path: Path) -> Optional[Path]:
             raise FileNotFoundError(
                 "soffice executable not found in PATH or standard locations."
             )
-
-        import tempfile
 
         with tempfile.TemporaryDirectory(prefix="smartqb_") as temp_dir:
             temp_outdir = Path(temp_dir)
