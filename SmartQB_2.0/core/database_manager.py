@@ -71,6 +71,14 @@ class SQLiteManager:
 
         self.conn.commit()
 
+    def close(self) -> None:
+        """
+        Closes the database connection.
+        """
+        if self.conn:
+            self.conn.close()
+            self.conn = None
+
 
 class LanceDBManager:
     """

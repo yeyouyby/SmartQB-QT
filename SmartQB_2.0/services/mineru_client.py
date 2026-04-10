@@ -36,10 +36,12 @@ class MinerUClient:
             if pdf_path:
                 file_path = pdf_path
             # 2. MinerU Submission
-        with open(file_path, "rb") as f:
-            response = await self.client.post(
-                "tasks", files={"file": (file_path.name, f)}
-            )
+        import anyio
+
+        file_content = await anyio.Path(file_path).read_bytes()
+        response = await self.client.post(
+            "tasks", files={"file": (file_path.name, file_content)}
+        )
         response.raise_for_status()
         try:
             response_data = response.json()
@@ -61,9 +63,9 @@ class MinerUClient:
                 status_res = await self.client.get(f"tasks/{task_id}")
                 status_res.raise_for_status()
                 status_data = status_res.json()
-            except httpx.RequestError as e:
-                # Handle transient network issues without aborting the entire process
-                logging.warning(f"MinerU polling connection issue, retrying: {e}")
+            except (httpx.RequestError, json.JSONDecodeError) as e:
+                # Handle transient network or parsing issues without aborting the entire process
+                logging.warning(f"MinerU polling issue, retrying: {e}")
                 await asyncio.sleep(self.POLLING_DELAY_SECONDS)
                 continue
 
