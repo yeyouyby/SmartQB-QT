@@ -20,7 +20,6 @@ markdown-it-py==4.0.0
 mdurl==0.1.2
 numpy==2.2.0
 packaging==26.0
-playwright==1.58.0
 pyarrow==18.0.0
 pycparser==3.0
 pydantic==2.12.5

@@ -43,11 +43,12 @@ class SQLiteManager:
         # Test connection
         try:
             self.conn.execute("SELECT count(*) FROM sqlite_master;")
-        except sqlite.DatabaseError:
-            if self.conn:
-                self.conn.close()
+        except sqlite.DatabaseError as e:
+            conn_to_close = self.conn
             self.conn = None
-            raise ValueError("Invalid database key or corrupted database.")
+            if conn_to_close:
+                conn_to_close.close()
+            raise ValueError("Invalid database key or corrupted database.") from e
 
     def init_schema(self) -> None:
         """
