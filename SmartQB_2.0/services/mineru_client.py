@@ -41,7 +41,7 @@ class MinerUClient:
         response.raise_for_status()
         try:
             response_data = response.json()
-        except Exception as e:
+        except httpx.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON response from MinerU: {e}")
 
         task_id = response_data.get("task_id")
