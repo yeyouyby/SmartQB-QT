@@ -37,10 +37,10 @@ class MinerUClient:
             if pdf_path:
                 file_path = pdf_path
             # 2. MinerU Submission
-        file_content = await anyio.Path(file_path).read_bytes()
-        response = await self.client.post(
-            "tasks", files={"file": (file_path.name, file_content)}
-        )
+        async with await anyio.Path(file_path).open("rb") as f:
+            response = await self.client.post(
+                "tasks", files={"file": (file_path.name, f)}
+            )
         response.raise_for_status()
         try:
             response_data = response.json()
