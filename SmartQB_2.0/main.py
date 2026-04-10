@@ -1,3 +1,5 @@
+import qasync
+import asyncio
 from pathlib import Path
 import logging
 import sys
@@ -55,9 +57,6 @@ def main():
         sys.exit(1)
 
     logging.info("Main app booted successfully and instantiated the router.")
-
-    import qasync
-    import asyncio
 
     loop = qasync.QEventLoop(app)
     asyncio.set_event_loop(loop)
