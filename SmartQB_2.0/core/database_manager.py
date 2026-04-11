@@ -28,6 +28,8 @@ class SQLiteManager:
 
         if self.conn:
             self.conn.close()
+        if create:
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite.connect(str(self.db_path))
 
         # Pragmas to configure SQLCipher

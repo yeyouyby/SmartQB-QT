@@ -38,8 +38,9 @@ class MinerUClient:
                 file_path = pdf_path
         # 2. MinerU Submission
         async with await anyio.open_file(file_path, "rb") as f:
+            file_content = await f.read()
             response = await self.client.post(
-                "tasks", files={"file": (file_path.name, f)}
+                "tasks", files={"file": (file_path.name, file_content)}
             )
         response.raise_for_status()
         try:
@@ -68,15 +69,21 @@ class MinerUClient:
                 await asyncio.sleep(self.POLLING_DELAY_SECONDS)
                 continue
 
+            if not isinstance(status_data, dict):
+                logging.warning(
+                    f"Unexpected status response format: {type(status_data)}"
+                )
+                await asyncio.sleep(self.POLLING_DELAY_SECONDS)
+                continue
+
             status = status_data.get("status")
             if status == "SUCCESS":
                 return status_data.get("result", {})
             elif status == "FAILED":
-                raise RuntimeError(f"MinerU Task Failed: {status_data.get('error')}")
+                error_msg = status_data.get("error", "Unknown error")
+                raise RuntimeError(f"MinerU Task Failed: {error_msg}")
             elif status is None:
-                raise RuntimeError(
-                    "Invalid status response from MinerU: 'status' key missing."
-                )
+                logging.warning("MinerU response missing 'status' key, retrying...")
 
             await asyncio.sleep(self.POLLING_DELAY_SECONDS)
 

@@ -14,7 +14,7 @@ async def convert_docx_to_pdf(file_path: Path) -> Optional[Path]:
     Provides a graceful degradation if the conversion tool is missing.
     """
     pdf_path = file_path.with_suffix(".pdf")
-    if pdf_path.exists():
+    if pdf_path.exists() and pdf_path.stat().st_mtime >= file_path.stat().st_mtime:
         return pdf_path
 
     try:
