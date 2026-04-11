@@ -84,9 +84,9 @@ class WebEnginePool:
         # Try to find an unused view (parent is None or not a widget in layout)
         for view in cls._pool:
             if view.parent() is None:
-                view.page().runJavaScript(
-                    "if(document.body) document.body.innerHTML = '';"
-                )
+                from PySide6.QtCore import QUrl
+
+                view.load(QUrl("about:blank"))
                 view.setParent(parent)
                 return view
 
@@ -97,9 +97,9 @@ class WebEnginePool:
             )
 
         new_view = QWebEngineView()
-        new_view.setHtml(
-            '<html><head><style>body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; padding: 10px; line-height: 1.5; }</style></head><body></body></html>'
-        )
+        from PySide6.QtCore import QUrl
+
+        new_view.load(QUrl("about:blank"))
         new_view.setParent(parent)
         cls._pool.append(new_view)
         return new_view
@@ -169,6 +169,14 @@ class QuestionBlockCard(ElevatedCardWidget):
             self.layout.addWidget(self.web_engine_view)
             self.web_engine_view.show()
             self.layout.addWidget(self.text_edit)
+
+            # Initialize with current text to prevent empty view on active edit
+            self.text_edit.setText(
+                self.preview_label.text()
+                if self.preview_label.text() != "Click to Edit Markdown"
+                else ""
+            )
+            self._sync_preview()
 
             self.text_edit.textChanged.connect(self._on_text_changed)
             self.text_edit.setFocus()

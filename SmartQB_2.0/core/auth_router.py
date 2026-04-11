@@ -1,5 +1,5 @@
-from PySide6.QtCore import QStandardPaths, QCoreApplication
 import sys
+from PySide6.QtCore import QStandardPaths, QCoreApplication
 from pathlib import Path
 
 from gui.views.auth_views import OOBEWizardWindow, LoginWindow
@@ -22,9 +22,7 @@ class BootRouter:
         """
         is_frozen = getattr(sys, "frozen", False)
         # Check if we are running from the development repository
-        is_dev_env = (self.script_root / ".git").exists() or (
-            self.script_root / ".gitignore"
-        ).exists()
+        is_dev_env = not getattr(sys, "frozen", False)
 
         if is_frozen or not is_dev_env:
             if QCoreApplication.instance() is None:
