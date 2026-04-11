@@ -104,7 +104,7 @@ class LanceDBManager:
                 pa.field("content_md", pa.string()),
                 pa.field("logic_chain", pa.string()),
                 pa.field("tags", pa.list_(pa.string())),
-                pa.field("created_at", pa.timestamp("s")),
+                pa.field("created_at", pa.timestamp("s", tz="UTC")),
             ]
         )
 
