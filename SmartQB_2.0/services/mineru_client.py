@@ -36,12 +36,16 @@ class MinerUClient:
             pdf_path = await convert_docx_to_pdf(file_path)
             if pdf_path:
                 file_path = pdf_path
+
         # 2. MinerU Submission
-        async with await anyio.open_file(file_path, "rb") as f:
-            file_content = await f.read()
-            response = await self.client.post(
-                "tasks", files={"file": (file_path.name, file_content)}
-            )
+        async def file_sender():
+            async with await anyio.open_file(file_path, "rb") as f:
+                while chunk := await f.read(65536):
+                    yield chunk
+
+        response = await self.client.post(
+            "tasks", files={"file": (file_path.name, file_sender())}
+        )
         response.raise_for_status()
         try:
             response_data = response.json()

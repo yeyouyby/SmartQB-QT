@@ -21,10 +21,8 @@ class BootRouter:
         Works for both script execution, PyInstaller packaged exe, and installed packages.
         """
         is_frozen = getattr(sys, "frozen", False)
-        # Check if we are running from the development repository
-        is_dev_env = not getattr(sys, "frozen", False)
 
-        if is_frozen or not is_dev_env:
+        if is_frozen:
             if QCoreApplication.instance() is None:
                 raise RuntimeError(
                     "BootRouter requires an active QCoreApplication instance to resolve paths via QStandardPaths."

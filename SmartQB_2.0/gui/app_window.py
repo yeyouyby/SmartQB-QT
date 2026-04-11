@@ -84,9 +84,6 @@ class WebEnginePool:
         # Try to find an unused view (parent is None or not a widget in layout)
         for view in cls._pool:
             if view.parent() is None:
-                from PySide6.QtCore import QUrl
-
-                view.load(QUrl("about:blank"))
                 view.setParent(parent)
                 return view
 
