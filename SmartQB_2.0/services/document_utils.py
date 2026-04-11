@@ -8,12 +8,24 @@ from pathlib import Path
 from typing import Optional
 
 
+from PySide6.QtCore import QStandardPaths
+
+
 async def convert_docx_to_pdf(file_path: Path) -> Optional[Path]:
     """
     Converts DOCX to PDF silently via LibreOffice.
     Provides a graceful degradation if the conversion tool is missing.
     """
-    pdf_path = file_path.with_suffix(".pdf")
+    cache_dir = (
+        Path(
+            QStandardPaths.writableLocation(
+                QStandardPaths.StandardLocation.CacheLocation
+            )
+        )
+        / "pdf_previews"
+    )
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    pdf_path = cache_dir / file_path.with_suffix(".pdf").name
     if pdf_path.exists() and pdf_path.stat().st_mtime >= file_path.stat().st_mtime:
         return pdf_path
 
@@ -56,7 +68,7 @@ async def convert_docx_to_pdf(file_path: Path) -> Optional[Path]:
                 str(file_path),
                 "--outdir",
                 str(temp_outdir),
-                stdout=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.PIPE,
             )
             try:

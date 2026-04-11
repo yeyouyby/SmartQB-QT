@@ -99,10 +99,8 @@ class WebEnginePool:
         # Hard limit reached: Implement simple LRU by stealing the oldest active view
         oldest_view = cls._pool.pop(0)
         old_parent = oldest_view.parent()
-        if old_parent and hasattr(old_parent, "_revert_state"):
-            old_parent._revert_state(
-                force=True
-            )  # Forces the card to drop its reference and detach
+        if old_parent and hasattr(old_parent, "bus"):
+            old_parent.bus.reclaim_view.emit(oldest_view)
 
         oldest_view.load(QUrl("about:blank"))
         oldest_view.setParent(parent)
@@ -114,6 +112,7 @@ class EventBus(QObject):
     """Global Event Bus for cross-panel communication."""
 
     question_focused = Signal(int)  # int represents block ID
+    reclaim_view = Signal(QWebEngineView)
 
 
 class QuestionBlockCard(ElevatedCardWidget):
@@ -161,6 +160,8 @@ class QuestionBlockCard(ElevatedCardWidget):
         self.debounce_timer.setInterval(300)
         self.debounce_timer.timeout.connect(self._sync_preview)
 
+        self.bus.reclaim_view.connect(self._on_reclaim_view)
+
     def mouseDoubleClickEvent(self, event):
         """Switch to State 2 (Active Edit) and borrow Chromium Engine from the pool."""
         if not self.web_engine_view:
@@ -199,6 +200,11 @@ class QuestionBlockCard(ElevatedCardWidget):
             else:
                 self._revert_state()
         return super().eventFilter(obj, event)
+
+    @Slot(QWebEngineView)
+    def _on_reclaim_view(self, target_view: QWebEngineView):
+        if self.web_engine_view is target_view:
+            self._revert_state(force=True)
 
     def _revert_state(self, force=False):
         """Switch back to State 1 and release Chromium Engine resources back to the pool."""

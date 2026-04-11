@@ -37,6 +37,9 @@ class SQLiteManager:
         # sqlite3 DB-API does not allow parameter binding for PRAGMA statements.
         pragma_key_query = f"PRAGMA key = \"x'{key.hex()}'\";"
         self.conn.execute(pragma_key_query)
+        # Prevent the literal key query string from being exposed in any future logging contexts
+        del pragma_key_query
+
         self.conn.execute("PRAGMA cipher_page_size = 4096;")
         self.conn.execute("PRAGMA kdf_iter = 600000;")
         self.conn.execute("PRAGMA cipher_hmac_algorithm = HMAC_SHA256;")
