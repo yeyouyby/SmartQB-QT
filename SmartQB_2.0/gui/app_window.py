@@ -7,6 +7,7 @@ from PySide6.QtCore import (
     QObject,
     QRunnable,
     QThreadPool,
+    QUrl,
 )
 from PySide6.QtWidgets import (
     QWidget,
@@ -90,8 +91,6 @@ class WebEnginePool:
         # If pool isn't full, create a new one
         if len(cls._pool) < cls.MAX_INSTANCES:
             new_view = QWebEngineView()
-            from PySide6.QtCore import QUrl
-
             new_view.load(QUrl("about:blank"))
             new_view.setParent(parent)
             cls._pool.append(new_view)
@@ -101,9 +100,9 @@ class WebEnginePool:
         oldest_view = cls._pool.pop(0)
         old_parent = oldest_view.parent()
         if old_parent and hasattr(old_parent, "_revert_state"):
-            old_parent._revert_state()  # Forces the card to drop its reference and detach
-
-        from PySide6.QtCore import QUrl
+            old_parent._revert_state(
+                force=True
+            )  # Forces the card to drop its reference and detach
 
         oldest_view.load(QUrl("about:blank"))
         oldest_view.setParent(parent)
@@ -201,10 +200,10 @@ class QuestionBlockCard(ElevatedCardWidget):
                 self._revert_state()
         return super().eventFilter(obj, event)
 
-    def _revert_state(self):
+    def _revert_state(self, force=False):
         """Switch back to State 1 and release Chromium Engine resources back to the pool."""
         if self.web_engine_view:
-            if self.isAncestorOf(QApplication.focusWidget()):
+            if not force and self.isAncestorOf(QApplication.focusWidget()):
                 return
 
             # Revert UI state

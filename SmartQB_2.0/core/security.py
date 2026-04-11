@@ -148,5 +148,4 @@ class KMSManager:
         Note: Python memory management makes true memory management difficult, but bytearrays
         can be overwritten before garbage collection.
         """
-        for i in range(len(byte_array)):
-            byte_array[i] = 0
+        byte_array[:] = b"\x00" * len(byte_array)
