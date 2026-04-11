@@ -21,7 +21,7 @@ class MinerUClient:
         self.client = httpx.AsyncClient(
             base_url=base_url,
             headers={"Authorization": f"Bearer {api_key}"},
-            timeout=60.0,
+            timeout=httpx.Timeout(60.0, read=300.0, write=300.0),
         )
 
     async def close(self):

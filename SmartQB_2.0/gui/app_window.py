@@ -87,19 +87,28 @@ class WebEnginePool:
                 view.setParent(parent)
                 return view
 
-        # If pool isn't full, create a new one. If full, dynamically grow but log a warning.
-        if len(cls._pool) >= cls.MAX_INSTANCES:
-            logging.warning(
-                f"WebEnginePool capacity ({cls.MAX_INSTANCES}) exceeded. Dynamically growing to {len(cls._pool) + 1}."
-            )
+        # If pool isn't full, create a new one
+        if len(cls._pool) < cls.MAX_INSTANCES:
+            new_view = QWebEngineView()
+            from PySide6.QtCore import QUrl
 
-        new_view = QWebEngineView()
+            new_view.load(QUrl("about:blank"))
+            new_view.setParent(parent)
+            cls._pool.append(new_view)
+            return new_view
+
+        # Hard limit reached: Implement simple LRU by stealing the oldest active view
+        oldest_view = cls._pool.pop(0)
+        old_parent = oldest_view.parent()
+        if old_parent and hasattr(old_parent, "_revert_state"):
+            old_parent._revert_state()  # Forces the card to drop its reference and detach
+
         from PySide6.QtCore import QUrl
 
-        new_view.load(QUrl("about:blank"))
-        new_view.setParent(parent)
-        cls._pool.append(new_view)
-        return new_view
+        oldest_view.load(QUrl("about:blank"))
+        oldest_view.setParent(parent)
+        cls._pool.append(oldest_view)  # Move to end (most recently used)
+        return oldest_view
 
 
 class EventBus(QObject):
