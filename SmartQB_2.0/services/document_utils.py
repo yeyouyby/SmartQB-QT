@@ -76,8 +76,12 @@ async def convert_docx_to_pdf(file_path: Path) -> Optional[Path]:
             try:
                 _, stderr = await asyncio.wait_for(process.communicate(), timeout=60.0)
             except asyncio.TimeoutError:
-                process.kill()
-                await process.wait()
+                process.terminate()
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=5.0)
+                except asyncio.TimeoutError:
+                    process.kill()
+                    await process.wait()
                 raise
 
             if process.returncode != 0:
