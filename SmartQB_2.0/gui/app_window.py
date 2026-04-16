@@ -146,11 +146,13 @@ class QuestionBlockCard(ElevatedCardWidget):
         self.block_id = block_id
         self.bus = bus
         self.markdown_text = ""
-        self.layout = QVBoxLayout(self)
+        self.card_layout = QVBoxLayout(self)
 
         # State 1: Lightweight Preview Label
         self.preview_label = QLabel("Click to Edit Markdown")
-        self.layout.addWidget(self.preview_label)
+        self.preview_label.setWordWrap(True)
+        self.preview_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.card_layout.addWidget(self.preview_label)
 
         # State 2 components (instantiated only when active)
         self.web_engine_view: QWebEngineView | None = None
@@ -173,9 +175,9 @@ class QuestionBlockCard(ElevatedCardWidget):
             self.preview_label.hide()
 
             # Replace UI with heavy widgets
-            self.layout.addWidget(self.web_engine_view)
+            self.card_layout.addWidget(self.web_engine_view)
             self.web_engine_view.show()
-            self.layout.addWidget(self.text_edit)
+            self.card_layout.addWidget(self.text_edit)
 
             # Initialize with the stored markdown text
             self.text_edit.setText(self.markdown_text)
@@ -219,8 +221,8 @@ class QuestionBlockCard(ElevatedCardWidget):
                 )
 
             # Revert UI state
-            self.layout.removeWidget(self.web_engine_view)
-            self.layout.removeWidget(self.text_edit)
+            self.card_layout.removeWidget(self.web_engine_view)
+            self.card_layout.removeWidget(self.text_edit)
             self.preview_label.show()
 
             # Return Heavy Chromium process to the void (unparent it) rather than destroying it
@@ -262,8 +264,8 @@ class CalibrationWorkspace(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.layout = QHBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout = QHBoxLayout(self)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.splitter = QSplitter(Qt.Orientation.Horizontal, self)
 
         self.bus = EventBus()
@@ -301,7 +303,7 @@ class CalibrationWorkspace(QWidget):
         self.splitter.setStretchFactor(1, 50)
         self.splitter.setStretchFactor(2, 15)
 
-        self.layout.addWidget(self.splitter)
+        self.card_layout.addWidget(self.splitter)
 
         # Mock Initial Blocks
         for i in range(5):
