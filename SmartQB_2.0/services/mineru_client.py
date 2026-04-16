@@ -1,4 +1,3 @@
-import anyio
 import json
 import logging
 import httpx
@@ -38,14 +37,10 @@ class MinerUClient:
                 file_path = pdf_path
 
         # 2. MinerU Submission
-        async def file_sender():
-            async with await anyio.open_file(file_path, "rb") as f:
-                while chunk := await f.read(65536):
-                    yield chunk
-
-        response = await self.client.post(
-            "tasks", files={"file": (file_path.name, file_sender())}
-        )
+        with open(file_path, "rb") as f:
+            response = await self.client.post(
+                "tasks", files={"file": (file_path.name, f)}
+            )
         response.raise_for_status()
         try:
             response_data = response.json()
