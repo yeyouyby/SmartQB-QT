@@ -69,6 +69,12 @@ class MinerUClient:
                 status_res.raise_for_status()
                 status_data = status_res.json()
             except (httpx.HTTPError, json.JSONDecodeError) as e:
+                if (
+                    isinstance(e, httpx.HTTPStatusError)
+                    and e.response.status_code < 500
+                    and e.response.status_code != 429
+                ):
+                    raise
                 # Handle transient network or parsing issues without aborting the entire process
                 logging.warning(f"MinerU polling issue, retrying: {e}")
                 await asyncio.sleep(self.POLLING_DELAY_SECONDS)

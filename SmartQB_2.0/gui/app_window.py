@@ -135,7 +135,21 @@ class QuestionBlockCard(ElevatedCardWidget):
         "ol",
         "li",
     }
-    _ALLOWED_HTML_ATTRS = {"*": ["class", "id"]}
+    _ALLOWED_HTML_ATTRS = {
+        "h1": ["id", "class"],
+        "h2": ["id", "class"],
+        "h3": ["id", "class"],
+        "h4": ["id", "class"],
+        "h5": ["id", "class"],
+        "h6": ["id", "class"],
+        "p": ["class"],
+        "div": ["class", "id"],
+        "span": ["class"],
+        "code": ["class"],
+        "pre": ["class"],
+        "a": ["href", "title", "class"],
+        "img": ["src", "alt", "title", "class"],
+    }
     """
     Flyweight Middle Panel Block.
     Switches between a light QLabel and heavy QWebEngineView dynamically.
