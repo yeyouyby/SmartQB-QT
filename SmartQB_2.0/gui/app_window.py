@@ -208,9 +208,7 @@ class QuestionBlockCard(ElevatedCardWidget):
 
         if obj is self.text_edit and event.type() == QEvent.Type.FocusOut:
             focused_widget = QApplication.focusWidget()
-            if focused_widget is None or self.isAncestorOf(focused_widget):
-                pass
-            else:
+            if focused_widget is not None and not self.isAncestorOf(focused_widget):
                 self._revert_state()
         return super().eventFilter(obj, event)
 

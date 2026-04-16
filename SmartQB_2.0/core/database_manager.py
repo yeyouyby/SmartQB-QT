@@ -35,8 +35,6 @@ class SQLiteManager:
         # Pragmas to configure SQLCipher
         # Construct the PRAGMA query string safely. String construction is necessary as
         # sqlite3 DB-API does not allow parameter binding for PRAGMA statements.
-        # Use a generator to construct the query strictly at the execution boundary
-        # to avoid binding the raw key hex string explicitly into the VM memory space longer than required.
         self.conn.execute(f"PRAGMA key = \"x'{key.hex()}'\";")
 
         self.conn.execute("PRAGMA cipher_page_size = 4096;")
