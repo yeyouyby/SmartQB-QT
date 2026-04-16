@@ -1,3 +1,4 @@
+import hashlib
 import asyncio
 import logging
 import platform
@@ -25,7 +26,8 @@ async def convert_docx_to_pdf(file_path: Path) -> Optional[Path]:
         / "pdf_previews"
     )
     cache_dir.mkdir(parents=True, exist_ok=True)
-    pdf_path = cache_dir / file_path.with_suffix(".pdf").name
+    path_hash = hashlib.sha256(str(file_path.absolute()).encode()).hexdigest()[:12]
+    pdf_path = cache_dir / f"{path_hash}_{file_path.with_suffix('.pdf').name}"
     if pdf_path.exists() and pdf_path.stat().st_mtime >= file_path.stat().st_mtime:
         return pdf_path
 

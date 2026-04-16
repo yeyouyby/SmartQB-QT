@@ -145,6 +145,7 @@ class QuestionBlockCard(ElevatedCardWidget):
         super().__init__(parent)
         self.block_id = block_id
         self.bus = bus
+        self.markdown_text = ""
         self.layout = QVBoxLayout(self)
 
         # State 1: Lightweight Preview Label
@@ -176,12 +177,8 @@ class QuestionBlockCard(ElevatedCardWidget):
             self.web_engine_view.show()
             self.layout.addWidget(self.text_edit)
 
-            # Initialize with current text to prevent empty view on active edit
-            self.text_edit.setText(
-                self.preview_label.text()
-                if self.preview_label.text() != "Click to Edit Markdown"
-                else ""
-            )
+            # Initialize with the stored markdown text
+            self.text_edit.setText(self.markdown_text)
             self._sync_preview()
 
             self.text_edit.textChanged.connect(self._on_text_changed)
@@ -211,6 +208,15 @@ class QuestionBlockCard(ElevatedCardWidget):
         if self.web_engine_view:
             if not force and self.isAncestorOf(QApplication.focusWidget()):
                 return
+
+            # Save content and update preview before destruction
+            if self.text_edit:
+                self.markdown_text = self.text_edit.toPlainText()
+                self.preview_label.setText(
+                    self.markdown_text
+                    if self.markdown_text
+                    else "Click to Edit Markdown"
+                )
 
             # Revert UI state
             self.layout.removeWidget(self.web_engine_view)
