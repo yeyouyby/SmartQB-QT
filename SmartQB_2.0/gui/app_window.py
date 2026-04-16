@@ -303,7 +303,7 @@ class CalibrationWorkspace(QWidget):
         self.splitter.setStretchFactor(1, 50)
         self.splitter.setStretchFactor(2, 15)
 
-        self.card_layout.addWidget(self.splitter)
+        self.main_layout.addWidget(self.splitter)
 
         # Mock Initial Blocks
         for i in range(5):
