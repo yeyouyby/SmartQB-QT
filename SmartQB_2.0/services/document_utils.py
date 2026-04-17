@@ -67,9 +67,10 @@ async def convert_docx_to_pdf(file_path: Path) -> Optional[Path]:
                 "--headless",
                 "--convert-to",
                 "pdf",
-                str(file_path),
                 "--outdir",
                 str(temp_outdir),
+                "--",
+                str(file_path),
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.PIPE,
             )
