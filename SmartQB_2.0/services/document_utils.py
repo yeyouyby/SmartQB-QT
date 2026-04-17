@@ -97,7 +97,7 @@ async def convert_docx_to_pdf(file_path: Path) -> Optional[Path]:
             # Move the converted file from the unique temp dir back to the target directory
             temp_pdf_path = temp_outdir / file_path.with_suffix(".pdf").name
             if temp_pdf_path.exists():
-                shutil.copy2(temp_pdf_path, pdf_path)
+                await asyncio.to_thread(shutil.copy2, temp_pdf_path, pdf_path)
                 return pdf_path
 
         return None

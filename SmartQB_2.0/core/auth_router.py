@@ -22,7 +22,9 @@ class BootRouter:
         """
         is_frozen = getattr(sys, "frozen", False)
         # Check if we are running from a local development repository clone
-        is_dev_env = not is_frozen and (self.script_root / ".git").exists()
+        import os
+
+        is_dev_env = not is_frozen and os.environ.get("SMARTQB_DEV") == "1"
 
         if is_frozen or not is_dev_env:
             if QCoreApplication.instance() is None:

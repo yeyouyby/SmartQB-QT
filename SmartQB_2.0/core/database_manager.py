@@ -1,3 +1,4 @@
+import asyncio
 import lancedb
 import pyarrow as pa
 from pathlib import Path
@@ -124,7 +125,7 @@ class LanceDBManager:
         else:
             self.table = self.db.open_table(self.table_name)
 
-    def insert_batch(self, data_batch: list[dict]) -> None:
+    async def insert_batch(self, data_batch: list[dict]) -> None:
         """
         Executes a single bulk insert transaction to LanceDB using the PyArrow table.
         Avoids I/O bottlenecks.
@@ -134,6 +135,6 @@ class LanceDBManager:
             return
         pa_table = pa.Table.from_pylist(data_batch, schema=self.schema)
         if self.table:
-            self.table.add(pa_table)
+            await asyncio.to_thread(self.table.add, pa_table)
         else:
             raise RuntimeError("LanceDB table not initialized. Call connect() first.")
