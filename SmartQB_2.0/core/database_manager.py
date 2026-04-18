@@ -111,19 +111,25 @@ class LanceDBManager:
             ]
         )
 
-    def connect(self) -> None:
+    async def connect(self) -> None:
         """
         Establishes the LanceDB connection.
         This is separated from __init__ to avoid blocking the GUI thread.
         """
-        self.db = lancedb.connect(str(self.db_path))
+        self.db = await asyncio.to_thread(lancedb.connect, str(self.db_path))
 
         # Create table if it doesn't exist
         self.table_name = "questions"
-        if self.table_name not in self.db.table_names():
-            self.table = self.db.create_table(self.table_name, schema=self.schema)
-        else:
-            self.table = self.db.open_table(self.table_name)
+        if self.db:
+            table_names = await asyncio.to_thread(self.db.table_names)
+            if self.table_name not in table_names:
+                self.table = await asyncio.to_thread(
+                    self.db.create_table, self.table_name, schema=self.schema
+                )
+            else:
+                self.table = await asyncio.to_thread(
+                    self.db.open_table, self.table_name
+                )
 
     async def insert_batch(self, data_batch: list[dict]) -> None:
         """
