@@ -98,4 +98,4 @@ class MinerUClient:
 
             await asyncio.sleep(self.POLLING_DELAY_SECONDS)
 
-        raise TimeoutError("MinerU task timed out.")
+        raise asyncio.TimeoutError("MinerU task timed out.")

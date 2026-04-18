@@ -219,6 +219,7 @@ class QuestionBlockCard(ElevatedCardWidget):
 
     def _revert_state(self, force=False):
         """Switch back to State 1 and release Chromium Engine resources back to the pool."""
+        self.debounce_timer.stop()
         if self.web_engine_view:
             if not force and self.isAncestorOf(QApplication.focusWidget()):
                 return
@@ -265,7 +266,9 @@ class QuestionBlockCard(ElevatedCardWidget):
                 strip=True,
             )
             html_json = json.dumps(clean_html)
-            js_patch = f"document.body.innerHTML = {html_json};"
+            js_patch = (
+                f"if (document.body) {{ document.body.innerHTML = {html_json}; }}"
+            )
             self.web_engine_view.page().runJavaScript(js_patch)
 
 
