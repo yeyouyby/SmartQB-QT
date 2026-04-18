@@ -36,7 +36,9 @@ class SQLiteManager:
         # Pragmas to configure SQLCipher
         # Construct the PRAGMA query string safely. String construction is necessary as
         # sqlite3 DB-API does not allow parameter binding for PRAGMA statements.
-        self.conn.execute(f"PRAGMA key = \"x'{key.hex()}'\";")
+        self.conn.execute(
+            f"PRAGMA key = \"x'{key.hex()}'\";"
+        )  # sourcery skip: sql-injection # nosec
 
         self.conn.execute("PRAGMA cipher_page_size = 4096;")
         self.conn.execute("PRAGMA kdf_iter = 600000;")
@@ -139,7 +141,9 @@ class LanceDBManager:
         # Convert dictionary batch to PyArrow Table based on schema
         if not data_batch:
             return
-        pa_table = pa.Table.from_pylist(data_batch, schema=self.schema)
+        pa_table = await asyncio.to_thread(
+            pa.Table.from_pylist, data_batch, schema=self.schema
+        )
         if self.table:
             await asyncio.to_thread(self.table.add, pa_table)
         else:

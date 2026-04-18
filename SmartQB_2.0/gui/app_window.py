@@ -91,7 +91,7 @@ class WebEnginePool:
         # If pool isn't full, create a new one
         if len(cls._pool) < cls.MAX_INSTANCES:
             new_view = QWebEngineView()
-            new_view.load(QUrl("about:blank"))
+            new_view.setHtml("")
             new_view.setParent(parent)
             cls._pool.append(new_view)
             return new_view
@@ -102,7 +102,7 @@ class WebEnginePool:
         if old_parent and hasattr(old_parent, "bus"):
             old_parent.bus.reclaim_view.emit(oldest_view)
 
-        oldest_view.load(QUrl("about:blank"))
+        oldest_view.setHtml("")
         oldest_view.setParent(parent)
         cls._pool.append(oldest_view)  # Move to end (most recently used)
         return oldest_view
