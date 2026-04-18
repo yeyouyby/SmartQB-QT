@@ -7,7 +7,6 @@ from PySide6.QtCore import (
     QObject,
     QRunnable,
     QThreadPool,
-    QUrl,
 )
 from PySide6.QtWidgets import (
     QWidget,
