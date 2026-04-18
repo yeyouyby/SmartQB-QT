@@ -180,6 +180,7 @@ class QuestionBlockCard(ElevatedCardWidget):
 
     def mouseDoubleClickEvent(self, event):
         """Switch to State 2 (Active Edit) and borrow Chromium Engine from the pool."""
+        super().mouseDoubleClickEvent(event)
         if not self.web_engine_view:
             self.web_engine_view = WebEnginePool.get_view(self)
             self.text_edit = TextEdit(self)
@@ -207,7 +208,7 @@ class QuestionBlockCard(ElevatedCardWidget):
 
         if obj is self.text_edit and event.type() == QEvent.Type.FocusOut:
             focused_widget = QApplication.focusWidget()
-            if focused_widget is not None and not self.isAncestorOf(focused_widget):
+            if focused_widget is not None and focused_widget is not self and not self.isAncestorOf(focused_widget):
                 self._revert_state()
         return super().eventFilter(obj, event)
 
