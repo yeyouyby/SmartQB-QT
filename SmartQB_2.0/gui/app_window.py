@@ -87,7 +87,7 @@ class WebEnginePool(QObject):
             cls._instance = cls()
         return cls._instance
 
-    MAX_INSTANCES = 3
+    MAX_INSTANCES = 10
 
     @classmethod
     def get_view(cls, parent=None) -> QWebEngineView:
@@ -150,6 +150,10 @@ class QuestionBlockCard(ElevatedCardWidget):
         "ul",
         "ol",
         "li",
+        "a",
+        "img",
+        "div",
+        "span",
     }
     _ALLOWED_HTML_ATTRS = {
         "h1": ["id", "class"],
@@ -212,7 +216,8 @@ class QuestionBlockCard(ElevatedCardWidget):
 
             # Initialize with the stored markdown text
             self.text_edit.setText(self.markdown_text)
-            self._sync_preview()
+            # Rely on initial setHtml directly instead of _sync_preview to avoid async JS run condition
+            self.web_engine_view.setHtml(self._render_html_sync(self.markdown_text))
 
             self.text_edit.textChanged.connect(self._on_text_changed)
             self.text_edit.setFocus()
@@ -274,20 +279,23 @@ class QuestionBlockCard(ElevatedCardWidget):
         """Start the 300ms debounce timer to prevent Chromium blinking."""
         self.debounce_timer.start()
 
+    def _render_html_sync(self, markdown_text: str) -> str:
+        """Render raw markdown to sanitized HTML string synchronously."""
+        raw_html = self._md_instance.render(markdown_text)
+        clean_html = bleach.clean(
+            raw_html,
+            tags=self._ALLOWED_HTML_TAGS,
+            attributes=self._ALLOWED_HTML_ATTRS,
+            strip=True,
+        )
+        return clean_html
+
     @Slot()
     def _sync_preview(self):
         """Synchronize Markdown -> HTML DOM without reloading entire page."""
         if self.web_engine_view and self.text_edit:
-            # Using runJavaScript to patch HTML inline (assuming template loaded)
-
-            raw_html = self._md_instance.render(self.text_edit.toPlainText())
-            clean_html = bleach.clean(
-                raw_html,
-                tags=self._ALLOWED_HTML_TAGS,
-                attributes=self._ALLOWED_HTML_ATTRS,
-                strip=True,
-            )
-            html_json = json.dumps(clean_html)
+            # Using runJavaScript to patch HTML inline
+            html_json = json.dumps(self._render_html_sync(self.text_edit.toPlainText()))
             js_patch = (
                 f"if (document.body) {{ document.body.innerHTML = {html_json}; }}"
             )
