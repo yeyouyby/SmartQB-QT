@@ -241,35 +241,33 @@ class QuestionBlockCard(ElevatedCardWidget):
     def _revert_state(self, force=False):
         """Switch back to State 1 and release Chromium Engine resources back to the pool."""
         self.debounce_timer.stop()
-        if self.web_engine_view:
-            if self.text_edit:
-                self.text_edit.deleteLater()
-                self.text_edit = None
-            if not force and self.isAncestorOf(QApplication.focusWidget()):
-                return
+        if not self.web_engine_view:
+            return
 
-            # Save content and update preview before destruction
-            if self.text_edit:
-                self.markdown_text = self.text_edit.toPlainText()
-                self.preview_label.setText(
-                    self.markdown_text
-                    if self.markdown_text
-                    else "Click to Edit Markdown"
-                )
+        # Check if focus is still within this card to avoid premature revert
+        if not force and self.isAncestorOf(QApplication.focusWidget()):
+            return
 
-            # Revert UI state
-            self.card_layout.removeWidget(self.web_engine_view)
+        # Save content and update preview before destruction
+        if self.text_edit:
+            self.markdown_text = self.text_edit.toPlainText()
+            self.preview_label.setText(
+                self.markdown_text if self.markdown_text else "Click to Edit Markdown"
+            )
+            # Remove from layout and delete
             self.card_layout.removeWidget(self.text_edit)
-            self.preview_label.show()
-
-            # Return Heavy Chromium process to the void (unparent it) rather than destroying it
-            if self.web_engine_view.parent() is self:
-                self.web_engine_view.hide()
-                self.web_engine_view.setParent(None)
-            self.web_engine_view = None
-
             self.text_edit.deleteLater()
             self.text_edit = None
+
+        # Revert UI state
+        self.card_layout.removeWidget(self.web_engine_view)
+        self.preview_label.show()
+
+        # Return Heavy Chromium process to the pool (unparent it) rather than destroying it
+        if self.web_engine_view.parent() is self:
+            self.web_engine_view.hide()
+            self.web_engine_view.setParent(None)
+        self.web_engine_view = None
 
     @Slot()
     def _on_text_changed(self):
