@@ -5,11 +5,12 @@ import asyncio
 from pathlib import Path
 from typing import Dict, Any
 from services.document_utils import convert_docx_to_pdf
+from resources.config.constants import MINERU_MAX_POLLING_ATTEMPTS, MINERU_POLLING_DELAY_SECONDS
 
 
 class MinerUClient:
-    MAX_POLLING_ATTEMPTS = 150
-    POLLING_DELAY_SECONDS = 2
+
+
 
     """
     MinerU RESTful API Async Client.
@@ -63,7 +64,7 @@ class MinerUClient:
 
         # 3. Long Polling
 
-        for _ in range(self.MAX_POLLING_ATTEMPTS):
+        for _ in range(MINERU_MAX_POLLING_ATTEMPTS):
             try:
                 status_res = await self.client.get(f"tasks/{task_id}")
                 status_res.raise_for_status()
@@ -77,14 +78,14 @@ class MinerUClient:
                     raise
                 # Handle transient network or parsing issues without aborting the entire process
                 logging.warning(f"MinerU polling issue, retrying: {e}")
-                await asyncio.sleep(self.POLLING_DELAY_SECONDS)
+                await asyncio.sleep(MINERU_POLLING_DELAY_SECONDS)
                 continue
 
             if not isinstance(status_data, dict):
                 logging.warning(
                     f"Unexpected status response format: {type(status_data)}"
                 )
-                await asyncio.sleep(self.POLLING_DELAY_SECONDS)
+                await asyncio.sleep(MINERU_POLLING_DELAY_SECONDS)
                 continue
 
             status = status_data.get("status")
@@ -96,6 +97,6 @@ class MinerUClient:
             elif status is None:
                 logging.warning("MinerU response missing 'status' key, retrying...")
 
-            await asyncio.sleep(self.POLLING_DELAY_SECONDS)
+            await asyncio.sleep(MINERU_POLLING_DELAY_SECONDS)
 
         raise asyncio.TimeoutError("MinerU task timed out.")

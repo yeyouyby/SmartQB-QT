@@ -70,13 +70,23 @@ class PDFRenderWorker(QRunnable):
             self.signals.render_finished.emit()
 
 
-class WebEnginePool:
+class WebEnginePool(QObject):
     """
     Global pool for QWebEngineView to prevent Chromium process creation/destruction overhead.
     Maintains a small pool of shared instances to support multi-block concurrent editing.
     """
 
     _pool: list[QWebEngineView] = []
+    reclaim_view = Signal(QWebEngineView)
+
+    _instance = None
+
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
     MAX_INSTANCES = 3
 
     @classmethod
@@ -97,9 +107,8 @@ class WebEnginePool:
 
         # Hard limit reached: Implement simple LRU by stealing the oldest active view
         oldest_view = cls._pool.pop(0)
-        old_parent = oldest_view.parent()
-        if old_parent and hasattr(old_parent, "bus"):
-            old_parent.bus.reclaim_view.emit(oldest_view)
+        # Emit via the global pool object instead of hacking into the parent
+        cls.instance().reclaim_view.emit(oldest_view)
 
         oldest_view.setHtml("")
         oldest_view.setParent(parent)
@@ -112,6 +121,15 @@ class EventBus(QObject):
 
     question_focused = Signal(int)  # int represents block ID
     reclaim_view = Signal(QWebEngineView)
+
+    _instance = None
+
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
 
 
 class QuestionBlockCard(ElevatedCardWidget):
@@ -176,7 +194,7 @@ class QuestionBlockCard(ElevatedCardWidget):
         self.debounce_timer.setInterval(300)
         self.debounce_timer.timeout.connect(self._sync_preview)
 
-        self.bus.reclaim_view.connect(self._on_reclaim_view)
+        WebEnginePool.instance().reclaim_view.connect(self._on_reclaim_view)
 
     def mouseDoubleClickEvent(self, event):
         """Switch to State 2 (Active Edit) and borrow Chromium Engine from the pool."""
@@ -225,6 +243,9 @@ class QuestionBlockCard(ElevatedCardWidget):
         """Switch back to State 1 and release Chromium Engine resources back to the pool."""
         self.debounce_timer.stop()
         if self.web_engine_view:
+            if self.text_edit:
+                self.text_edit.deleteLater()
+                self.text_edit = None
             if not force and self.isAncestorOf(QApplication.focusWidget()):
                 return
 
