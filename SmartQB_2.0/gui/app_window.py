@@ -131,7 +131,6 @@ class EventBus(QObject):
         return cls._instance
 
 
-
 class QuestionBlockCard(ElevatedCardWidget):
     _md_instance = MarkdownIt()
     _ALLOWED_HTML_TAGS = bleach.sanitizer.ALLOWED_TAGS | {

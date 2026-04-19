@@ -5,13 +5,13 @@ import asyncio
 from pathlib import Path
 from typing import Dict, Any
 from services.document_utils import convert_docx_to_pdf
-from resources.config.constants import MINERU_MAX_POLLING_ATTEMPTS, MINERU_POLLING_DELAY_SECONDS
+from resources.config.constants import (
+    MINERU_MAX_POLLING_ATTEMPTS,
+    MINERU_POLLING_DELAY_SECONDS,
+)
 
 
 class MinerUClient:
-
-
-
     """
     MinerU RESTful API Async Client.
     Executes tasks non-blockingly and generates local PDF for DOCX.
