@@ -92,9 +92,11 @@ class WebEnginePool(QObject):
     @classmethod
     def get_view(cls, parent=None) -> QWebEngineView:
         # Try to find an unused view (parent is None or not a widget in layout)
-        for view in cls._pool:
+        for i, view in enumerate(cls._pool):
             if view.parent() is None:
+                cls._pool.pop(i)
                 view.setParent(parent)
+                cls._pool.append(view)
                 return view
 
         # If pool isn't full, create a new one
