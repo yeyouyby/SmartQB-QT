@@ -33,26 +33,23 @@ class SQLiteManager:
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite.connect(str(self.db_path))
 
-        # Pragmas to configure SQLCipher
-        # Construct the PRAGMA query string safely. String construction is necessary as
-        # sqlite3 DB-API does not allow parameter binding for PRAGMA statements.
-        self.conn.execute(
-            f"PRAGMA key = \"x'{key.hex()}'\";"
-        )  # sourcery skip: sql-injection # nosec
-
-        self.conn.execute("PRAGMA cipher_page_size = 4096;")
-        self.conn.execute("PRAGMA kdf_iter = 600000;")
-        self.conn.execute("PRAGMA cipher_hmac_algorithm = HMAC_SHA256;")
-        self.conn.execute("PRAGMA cipher_kdf_algorithm = PBKDF2_HMAC_SHA256;")
-
-        # Test connection
         try:
+            # Pragmas to configure SQLCipher
+            # Construct the PRAGMA query string safely. String construction is necessary as
+            # sqlite3 DB-API does not allow parameter binding for PRAGMA statements.
+            self.conn.execute(
+                f"PRAGMA key = \"x'{key.hex()}'\";"
+            )  # sourcery skip: sql-injection # nosec
+            self.conn.execute("PRAGMA cipher_page_size = 4096;")
+            self.conn.execute("PRAGMA kdf_iter = 600000;")
+            self.conn.execute("PRAGMA cipher_hmac_algorithm = HMAC_SHA256;")
+            self.conn.execute("PRAGMA cipher_kdf_algorithm = PBKDF2_HMAC_SHA256;")
+            # Test connection
             self.conn.execute("SELECT count(*) FROM sqlite_master;")
-        except sqlite.DatabaseError as e:
-            conn_to_close = self.conn
+        except (sqlite.DatabaseError, sqlite.Error) as e:
+            if self.conn:
+                self.conn.close()
             self.conn = None
-            if conn_to_close:
-                conn_to_close.close()
             raise ValueError("Invalid database key or corrupted database.") from e
 
     def init_schema(self) -> None:
