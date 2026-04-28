@@ -37,6 +37,7 @@ jobs:
 
       - name: 📦 Install Dependencies
         run: |
+          sudo apt-get update && sudo apt-get install -y sqlcipher libsqlite3-dev libsqlcipher-dev
           python -m pip install --upgrade pip
           pip install ruff mypy bandit PySide6
 
